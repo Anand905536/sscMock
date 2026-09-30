@@ -2,7 +2,11 @@ import "dotenv/config";
 import express from "express"
 import cors from "cors";
 import connectDB from "./config/db.js";
-import testRoutes from './routes/test.routes.js' 
+import testRoutes from './routes/test.routes.js'
+import questionsRoutes from './routes/question.routes.js' 
+import attemptRoutes from './routes/attempt.routes.js'
+import authRoutes from './routes/auth.routes.js'
+import { protect } from "./middleware/auth.middleware.js";
 
 const app = express();
 app.use(cors())
@@ -18,6 +22,16 @@ app.get("/", (req, res) => {
 })
 
 app.use('/api/tests',testRoutes)
+app.use('/api/questions',questionsRoutes)
+app.use('/api/attempts',attemptRoutes)
+app.use("/api/auth",authRoutes);
+
+app.get("/api/auth/me",protect,(req,res)=>{
+    res.json({
+        message:"You are authenticated",
+        user:req.user
+    })
+})
 
 
 // running PORT

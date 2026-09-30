@@ -7,7 +7,7 @@ const questionSchema = new mongoose.Schema({
         required: true
     },
     questionText: {
-        type: string,
+        type: String,
         required: true,
         trim: true,
     },
@@ -20,11 +20,11 @@ const questionSchema = new mongoose.Schema({
         required:true
     },
     explanation: {
-        type: string,
+        type: String,
         default: "",
     },
     difficulty: {
-        type: string,
+        type: String,
         enum: ["easy", "medium", "hard"],
         default: "medium",
     }
