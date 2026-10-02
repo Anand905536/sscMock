@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
-
+import { sendWelcomeEmail } from "../services/email.service.js";
 import User from '../models/User.model.js';
 
 export const register = async (req, res) => {
@@ -31,6 +31,8 @@ export const register = async (req, res) => {
             email,
             password: hashedPassword
         })
+
+        await sendWelcomeEmail(user.name, user.email);
 
         res.status(201).json({
             message: "User reistered successfully",
@@ -90,21 +92,21 @@ export const login = async (req, res) => {
                 expiresIn: "7d",
             }
         )
-        
+
         res.status(200).json({
-            message:"Login successful",
+            message: "Login successful",
             token,
-            user:{
-                id:user._id,
-                name:user.name,
-                email:user.email,
-                role:user.role,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
             }
         })
     } catch (err) {
-       res.status(500).json({
-        message:"Login failed",
-        error:err.message,
-       })
+        res.status(500).json({
+            message: "Login failed",
+            error: err.message,
+        })
     }
 }

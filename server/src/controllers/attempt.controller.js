@@ -3,11 +3,13 @@ import Question from "../models/Question.model.js";
 
 export const submitAttempt = async (req, res) => {
   try {
-    const { user, test, answers } = req.body;
+    const { test, answers } = req.body;
 
-    if (!user || !test || !answers) {
+    const user=req.user.userId
+
+    if (!test || !answers) {
       return res.status(400).json({
-        message: "user, test and answers are required",
+        message: "Test and answers are required",
       });
     }
 
