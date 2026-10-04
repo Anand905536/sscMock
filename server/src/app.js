@@ -34,14 +34,6 @@ app.get("/api/auth/me", protect, (req, res) => {
     })
 })
 
-app.get("/api/admin-test", protect, authorize("admin"), (req, res) => {
-    res.json({
-        message: "Welcome Admin",
-        user: req.user
-    })
-})
-
-
 // running PORT
 const PORT = process.env.PORT || 6000;
 

@@ -20,3 +20,4 @@ router.put("/:id",protect,authorize("admin"),updateQuestion)
 router.delete("/:id",protect,authorize("admin"),deleteQuestion)
 
 export default router
+

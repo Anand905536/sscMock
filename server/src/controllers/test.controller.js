@@ -31,7 +31,15 @@ export const createTest = async (req, res) => {
 // get all tests
 export const getTests = async (req, res) => {
     try {
-        const tests = await Test.find();
+        let query = Test.find()
+        if (req.user.role !== "admin") {
+            query = query.find({
+                status: "published",
+            })
+        }
+
+        const tests = await query
+
         res.status(200).json(tests);
     } catch (err) {
         res.status(500).json({
@@ -48,6 +56,12 @@ export const getTestById = async (req, res) => {
         if (!test) {
             return res.status(404).json({
                 message: "Test not found",
+            })
+        }
+
+        if (req.user.role !== "admin" && test.status !== "published") {
+            return res.status(403).json({
+                message: "This is not available"
             })
         }
         res.status(200).json(test);
