@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, RefreshCw, Pencil, Trash2 } from "lucide-react";
 
 import { apiRequest } from "../../../lib/api";
@@ -25,6 +26,7 @@ export default function TestsPage() {
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   const fetchTests = async () => {
     try {
@@ -32,7 +34,7 @@ export default function TestsPage() {
       setError("");
 
       const token = localStorage.getItem("token");
-       
+
       if (!token) {
         setError("Admin login token not found. Please login again.");
         return;
@@ -44,7 +46,9 @@ export default function TestsPage() {
         },
       });
 
-      setTests(data.tests || []);
+      console.log("called", data.tests)
+
+      setTests(data || []);
     } catch (err) {
       setError(err.message || "Failed to load tests");
     } finally {
@@ -102,7 +106,7 @@ export default function TestsPage() {
             Refresh
           </Button>
 
-          <Button>
+          <Button onClick={() => router.push("/tests/new")}>
             <Plus className="mr-2 h-4 w-4" />
             Create Test
           </Button>
@@ -181,11 +185,11 @@ export default function TestsPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => router.push(`/tests/${test._id}/edit`)}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
                         </Button>
-
                         <Button
                           variant="outline"
                           size="sm"

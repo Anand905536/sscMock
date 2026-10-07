@@ -1,8 +1,10 @@
 import Question from '../models/Question.model.js'
+import Test from '../models/Test.model.js'
 
 export const createQuestion = async (req, res) => {
+
     try {
-        const { test, questionText, options, correctAnswer, explanation, difficulty } = req.body
+        const { test,questionText, options, correctAnswer, explanation, difficulty } = req.body
 
         if (!test || !questionText || !options || !correctAnswer) {
             return res.status(400).json({
@@ -15,7 +17,17 @@ export const createQuestion = async (req, res) => {
                 message: "Correct answer must be one of the options"
             })
         }
-        const question = await Question.create({ test, questionText, options, correctAnswer, explanation, difficulty })
+
+        const testData = await Test.findById(test);
+         console.log("testData",testData)
+
+        if (!testData) {
+            return res.status(404).json({
+                message: "Test not found"
+            });
+        }
+
+        const question = await Question.create({ test,testTitle: testData.title, questionText, options, correctAnswer, explanation, difficulty })
 
         res.status(201).json({
             message: "question created successfully",
@@ -32,7 +44,7 @@ export const createQuestion = async (req, res) => {
 
 export const getQuestions = async (req, res) => {
     try {
-        let query = Question.find();
+        let query = Question.find().populate("test", "title");
 
         if (req.user.role !== "admin") {
             query = query.select("-correctAnswer")
@@ -71,6 +83,33 @@ export const getQuestionsByTest = async (req, res) => {
     }
 }
 
+// newly added 
+export const getQuestionById = async (req, res) => {
+    try {
+        let query = Question.findById(req.params.id).populate("test", "title");
+
+        if (req.user.role !== "admin") {
+            query = query.select("-correctAnswer");
+        }
+
+        const question = await query;
+
+        if (!question) {
+            return res.status(404).json({
+                message: "Question not found",
+            });
+        }
+
+        res.status(200).json(question);
+    } catch (err) {
+        res.status(500).json({
+            message: "Failed to fetch question",
+            error: err.message,
+        });
+    }
+};
+
+
 export const updateQuestion = async (req, res) => {
     try {
         const { test, questionText, options, correctAnswer, explanation, difficulty, } = req.body
@@ -82,6 +121,7 @@ export const updateQuestion = async (req, res) => {
         }
 
         if (!options.includes(correctAnswer)) {
+
             return res.status(400).json({
                 message: "correct answer must be one of the options"
             })

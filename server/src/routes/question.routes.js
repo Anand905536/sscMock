@@ -6,6 +6,7 @@ import {
     getQuestionsByTest,
     updateQuestion,
     deleteQuestion,
+    getQuestionById
 } from '../controllers/question.controller.js'
 
 import { protect } from '../middleware/auth.middleware.js';
@@ -18,6 +19,8 @@ router.get('/',protect, getQuestions);
 router.get('/test/:testId',protect,getQuestionsByTest);
 router.put("/:id",protect,authorize("admin"),updateQuestion)
 router.delete("/:id",protect,authorize("admin"),deleteQuestion)
+// newly added 
+router.get("/:id", protect, getQuestionById);
 
 export default router
 

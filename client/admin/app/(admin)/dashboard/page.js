@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   FileText,
   CircleHelp,
@@ -8,61 +11,94 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
-
-const stats = [
-  {
-    title: "Total Tests",
-    value: "12",
-    description: "All created tests",
-    icon: FileText,
-  },
-  {
-    title: "Published Tests",
-    value: "8",
-    description: "Currently available",
-    icon: ClipboardCheck,
-  },
-  {
-    title: "Total Questions",
-    value: "240",
-    description: "Across all tests",
-    icon: CircleHelp,
-  },
-  {
-    title: "Total Users",
-    value: "156",
-    description: "Registered users",
-    icon: Users,
-  },
-];
-
-const recentTests = [
-  {
-    title: "SSC CGL Mock Test 1",
-    category: "SSC CGL",
-    questions: 25,
-    status: "Published",
-  },
-  {
-    title: "SSC CHSL Practice Set",
-    category: "SSC CHSL",
-    questions: 30,
-    status: "Published",
-  },
-  {
-    title: "General Knowledge Test",
-    category: "GK",
-    questions: 20,
-    status: "Draft",
-  },
-];
+import { apiRequest } from "../../../lib/api";
 
 export default function DashboardPage() {
+  const [tests, setTests] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [userStats, setUserStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+  });
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          return;
+        }
+
+        const [testsData, questionsData, userStatsData] = await Promise.all([
+          apiRequest("/tests", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+
+          apiRequest("/questions", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+
+          apiRequest("/users/stats", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        ]);
+
+
+        setTests(testsData || []);
+        setQuestions(questionsData || []);
+        setUserStats(userStatsData || {
+          totalUsers: 0,
+          activeUsers: 0,
+        });
+
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const totalTests = tests.length;
+
+  const publishedTests = tests.filter(
+    (test) => test.status === "published"
+  ).length;
+
+  const draftTests = tests.filter(
+    (test) => test.status === "draft"
+  ).length;
+
+  const totalQuestions = questions.length;
+
+  const recentTests = [...tests]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    )
+    .slice(0, 5);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 md:p-8">
       <div className="mx-auto max-w-7xl space-y-8">
+
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -84,33 +120,135 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
+       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
-            return (
-              <Card key={stat.title}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-500">
-                    {stat.title}
-                  </CardTitle>
+          {/* Total Tests */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Total Tests
+              </CardTitle>
 
-                  <Icon className="h-4 w-4 text-gray-400" />
-                </CardHeader>
+              <FileText className="h-4 w-4 text-gray-400" />
+            </CardHeader>
 
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {stat.value}
-                  </div>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {loading ? "..." : totalTests}
+              </div>
 
-                  <p className="mt-1 text-xs text-gray-500">
-                    {stat.description}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
+              <p className="mt-1 text-xs text-gray-500">
+                All created tests
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Published Tests */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Published Tests
+              </CardTitle>
+
+              <ClipboardCheck className="h-4 w-4 text-gray-400" />
+            </CardHeader>
+
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {loading ? "..." : publishedTests}
+              </div>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Currently available
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Draft Tests */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Draft Tests
+              </CardTitle>
+
+              <FileText className="h-4 w-4 text-gray-400" />
+            </CardHeader>
+
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {loading ? "..." : draftTests}
+              </div>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Not yet published
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Total Questions */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Total Questions
+              </CardTitle>
+
+              <CircleHelp className="h-4 w-4 text-gray-400" />
+            </CardHeader>
+
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {loading ? "..." : totalQuestions}
+              </div>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Across all tests
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Users - temporary */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Total Users
+              </CardTitle>
+
+              <Users className="h-4 w-4 text-gray-400" />
+            </CardHeader>
+
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {loading ? "..." : userStats.totalUsers}
+              </div>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Registered users
+              </p>
+            </CardContent>
+          </Card>
+             
+              <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">
+              Active Users
+            </CardTitle>
+
+            <Users className="h-4 w-4 text-gray-400" />
+          </CardHeader>
+
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900">
+              {loading ? "..." : userStats.activeUsers}
+            </div>
+
+            <p className="mt-1 text-xs text-gray-500">
+              Active in last 5 minutes
+            </p>
+          </CardContent>
+        </Card>
         </div>
+
+       
 
         {/* Recent Tests */}
         <Card>
@@ -119,7 +257,7 @@ export default function DashboardPage() {
               <CardTitle>Recent Tests</CardTitle>
 
               <p className="mt-1 text-sm text-gray-500">
-                Overview of recently created tests.
+                Recently created tests.
               </p>
             </div>
 
@@ -132,34 +270,43 @@ export default function DashboardPage() {
           </CardHeader>
 
           <CardContent>
-            <div className="divide-y">
-              {recentTests.map((test) => (
-                <div
-                  key={test.title}
-                  className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      {test.title}
-                    </h3>
+            {loading ? (
+              <p className="py-4 text-sm text-gray-500">
+                Loading tests...
+              </p>
+            ) : recentTests.length === 0 ? (
+              <p className="py-4 text-sm text-gray-500">
+                No tests found.
+              </p>
+            ) : (
+              <div className="divide-y">
+                {recentTests.map((test) => (
+                  <div
+                    key={test._id}
+                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <h3 className="font-medium text-gray-900">
+                        {test.title}
+                      </h3>
 
-                    <p className="mt-1 text-sm text-gray-500">
-                      {test.category} · {test.questions} questions
-                    </p>
-                  </div>
+                      <p className="mt-1 text-sm text-gray-500">
+                        {test.category || "No category"}
+                      </p>
+                    </div>
 
-                  <span
-                    className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${
-                      test.status === "Published"
+                    <span
+                      className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${test.status === "published"
                         ? "bg-gray-900 text-white"
                         : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {test.status}
-                  </span>
-                </div>
-              ))}
-            </div>
+                        }`}
+                    >
+                      {test.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -207,6 +354,7 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+
       </div>
     </div>
   );
