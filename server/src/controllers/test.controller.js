@@ -3,51 +3,122 @@ import Question from "../models/Question.model.js";
 
 
 // create test
+// create test
 export const createTest = async (req, res) => {
     try {
-        const { title, description, category, durationMinutes, status } = req.body
+        const {
+            title,
+            description,
+            category,
+            subject,
+            topic,
+            durationMinutes,
+            marksPerQuestion,
+            negativeMarks,
+            status,
+        } = req.body;
 
-        if (!title || !category || !durationMinutes) {
+        if (
+            !title ||
+            !category ||
+            !subject ||
+            !topic ||
+            !durationMinutes ||
+            marksPerQuestion === undefined ||
+            negativeMarks === undefined
+        ) {
             return res.status(400).json({
-                message: "Title , Category and duration are required",
-            })
+                message:
+                    "Title, Category, Subject, Topic and duration are required",
+            });
         }
 
-        const test = await Test.create({ title, description, category, durationMinutes, status })
+        if (
+            marksPerQuestion === undefined ||
+            marksPerQuestion === null ||
+            marksPerQuestion < 0
+        ) {
+            return res.status(400).json({
+                message: "Marks per question are required",
+            });
+        }
+
+        if (
+            negativeMarks === undefined ||
+            negativeMarks === null ||
+            negativeMarks < 0
+        ) {
+            return res.status(400).json({
+                message: "Negative marks are required",
+            });
+        }
+
+        const test = await Test.create({
+            title,
+            description,
+            category,
+            subject,
+            topic,
+            durationMinutes,
+            marksPerQuestion,
+            negativeMarks,
+            status,
+        });
 
         res.status(201).json({
             message: "Test created successfully",
             test,
-        })
+        });
     } catch (err) {
         res.status(500).json({
             message: "Failed to create test",
-            error: err.message
-        })
+            error: err.message,
+        });
     }
-}
+};
 
 
 // get all tests
 export const getTests = async (req, res) => {
+    console.log("inside get tests", req.query.subject, req.query.topic)
     try {
-        let query = Test.find()
+        let query = Test.find();
+
+        // Normal users can only see published tests
         if (req.user.role !== "admin") {
             query = query.find({
                 status: "published",
-            })
+            });
         }
 
-        const tests = await query
+
+
+        // Optional subject filter
+        if (req.query.subject) {
+            query = query.find({
+                subject: req.query.subject,
+            });
+        }
+
+        // Optional topic filter
+        if (req.query.topic) {
+            query = query.find({
+                topic: req.query.topic,
+            });
+        }
+
+        const tests = await query.sort({
+            createdAt: -1,
+        });
 
         res.status(200).json(tests);
     } catch (err) {
         res.status(500).json({
             message: "Failed to fetch tests",
             error: err.message,
-        })
+        });
     }
-}
+};
 
 // get test by ID 
 export const getTestById = async (req, res) => {

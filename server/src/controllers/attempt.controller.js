@@ -15,7 +15,7 @@ export const getAttemptResults = async (req, res) => {
       status: "completed",
     }).populate(
       "test",
-      "title category durationMinutes"
+      "title category durationMinutes marksPerQuestion negativeMarks subject topic"
     );
 
     if (!attempt) {
@@ -27,10 +27,20 @@ export const getAttemptResults = async (req, res) => {
     const totalQuestions = attempt.totalQuestions;
     const score = attempt.score;
 
+    const marksPerQuestion =
+      attempt.test.marksPerQuestion ?? 1;
+
+    const negativeMarks =
+      attempt.test.negativeMarks ?? 0;
+
+    const maximumMarks =
+      totalQuestions * marksPerQuestion;
+
     const percentage =
-      totalQuestions > 0
-        ? (score / totalQuestions) * 100
+      maximumMarks > 0
+        ? (score / maximumMarks) * 100
         : 0;
+
 
     // Get all completed attempts for this test
     const completedAttempts = await Attempt.find({
@@ -122,27 +132,19 @@ export const getAttemptResults = async (req, res) => {
 
       result: {
         attemptId: attempt._id,
-
         test: attempt.test,
-
         score,
         totalQuestions,
-
-        percentage: Number(
-          percentage.toFixed(2)
-        ),
-
-        percentile: Number(
-          percentile.toFixed(2)
-        ),
-
+        maximumMarks,
+        marksPerQuestion,
+        negativeMarks,
+        percentage: Number(percentage.toFixed(2)),
+        percentile: Number(percentile.toFixed(2)),
         rank,
         totalCandidates,
-
         correctAnswers,
         incorrectAnswers,
         unanswered,
-
         startedAt: attempt.startedAt,
         completedAt: attempt.completedAt,
         status: attempt.status,
@@ -351,17 +353,31 @@ export const submitAttempt = async (req, res) => {
     // Calculate score
     let score = 0;
 
+    const marksPerQuestion = existingTest.marksPerQuestion ?? 1;
+    const negativeMarks = existingTest.negativeMarks ?? 0;
+
     for (const answer of answers) {
       const question = questions.find(
         (question) =>
           question._id.toString() === answer.question
       );
 
+      if (!question) continue;
+
+      // Unanswered question
       if (
-        question &&
-        question.correctAnswer === answer.selectedAnswer
+        answer.selectedAnswer === undefined ||
+        answer.selectedAnswer === ""
       ) {
-        score++;
+        continue;
+      }
+
+      // Correct answer
+      if (question.correctAnswer === answer.selectedAnswer) {
+        score += marksPerQuestion;
+      } else {
+        // Wrong answer
+        score -= negativeMarks;
       }
     }
 
@@ -397,18 +413,31 @@ export const getMyAttempts = async (req, res) => {
     const user = req.user.userId
 
     const attempts = await Attempt.find({ user })
-      .populate("test", "title category durationMinutes")
-      .sort({ createdAt: -1 });
+      .populate(
+        "test",
+        "title category durationMinutes marksPerQuestion negativeMarks"
+      )
 
     const history = attempts.map((attempt) => {
-      const percentage = attempt.totalQuestions > 0 ?
-        (attempt.score / attempt.totalQuestions) * 100 : 0
+      const marksPerQuestion =
+        attempt.test?.marksPerQuestion ?? 1;
+
+      const maximumMarks =
+        attempt.totalQuestions * marksPerQuestion;
+
+      const percentage =
+        maximumMarks > 0
+          ? (attempt.score / maximumMarks) * 100
+          : 0;
 
       return {
         attemptId: attempt._id,
         test: attempt.test,
         score: attempt.score,
         totalQuestions: attempt.totalQuestions,
+        maximumMarks,
+        marksPerQuestion,
+        negativeMarks,
         percentage: Number(
           percentage.toFixed(2)
         ),

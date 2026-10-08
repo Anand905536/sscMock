@@ -15,6 +15,32 @@ import {
   CardTitle,
 } from "../../../../components/ui/card";
 
+const subjects = {
+  English: [
+    "Vocabulary",
+    "Spot the Error",
+    "Para Jumbles",
+    "Fill in the Blanks",
+    "Grammar",
+    "Synonyms",
+    "Antonyms",
+    "Idioms & Phrases",
+    "One Word Substitution",
+    "Active & Passive Voice",
+  ],
+
+  "General Studies": [
+    "History",
+    "Geography",
+    "Indian Polity",
+    "Economics",
+    "General Science",
+    "Current Affairs",
+    "Static GK",
+    "Environment",
+  ],
+};
+
 export default function NewTestPage() {
   const router = useRouter();
 
@@ -22,7 +48,11 @@ export default function NewTestPage() {
     title: "",
     description: "",
     category: "",
+    subject: "",
+    topic: "",
     durationMinutes: "",
+    marksPerQuestion: "1",
+    negativeMarks: "0",
     status: "draft",
   });
 
@@ -33,6 +63,14 @@ export default function NewTestPage() {
     setForm({
       ...form,
       [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubjectChange = (e) => {
+    setForm({
+      ...form,
+      subject: e.target.value,
+      topic: "",
     });
   };
 
@@ -50,6 +88,10 @@ export default function NewTestPage() {
         return;
       }
 
+      // console.log("FORM DATA:", form);
+      // console.log("SUBJECT:", form.subject);
+      // console.log("TOPIC:", form.topic);
+
       await apiRequest("/tests", {
         method: "POST",
         headers: {
@@ -59,7 +101,11 @@ export default function NewTestPage() {
           title: form.title,
           description: form.description,
           category: form.category,
+          subject: form.subject,
+          topic: form.topic,
           durationMinutes: Number(form.durationMinutes),
+          marksPerQuestion: form.marksPerQuestion,
+          negativeMarks: form.negativeMarks,
           status: form.status,
         }),
       });
@@ -100,8 +146,10 @@ export default function NewTestPage() {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
+
               <Input
                 id="title"
                 name="title"
@@ -112,8 +160,10 @@ export default function NewTestPage() {
               />
             </div>
 
+            {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
+
               <textarea
                 id="description"
                 name="description"
@@ -125,8 +175,10 @@ export default function NewTestPage() {
               />
             </div>
 
+            {/* Category */}
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
+
               <Input
                 id="category"
                 name="category"
@@ -137,6 +189,55 @@ export default function NewTestPage() {
               />
             </div>
 
+            {/* Subject */}
+            <div className="space-y-2">
+              <Label htmlFor="subject">Subject</Label>
+
+              <select
+                id="subject"
+                name="subject"
+                value={form.subject}
+                onChange={handleSubjectChange}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Select subject</option>
+                <option value="English">English</option>
+                <option value="General Studies">
+                  General Studies
+                </option>
+              </select>
+            </div>
+
+            {/* Topic */}
+            <div className="space-y-2">
+              <Label htmlFor="topic">Topic</Label>
+
+              <select
+                id="topic"
+                name="topic"
+                value={form.topic}
+                onChange={handleChange}
+                disabled={!form.subject}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">
+                  {form.subject
+                    ? "Select topic"
+                    : "Select subject first"}
+                </option>
+
+                {form.subject &&
+                  subjects[form.subject].map((topic) => (
+                    <option key={topic} value={topic}>
+                      {topic}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* Duration */}
             <div className="space-y-2">
               <Label htmlFor="durationMinutes">
                 Duration (minutes)
@@ -153,6 +254,48 @@ export default function NewTestPage() {
               />
             </div>
 
+            {/* marks per question */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="marksPerQuestion">
+                  Marks Per Question
+                </Label>
+
+                <Input
+                  id="marksPerQuestion"
+                  name="marksPerQuestion"
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={form.marksPerQuestion}
+                  onChange={handleChange}
+                  placeholder="e.g. 2"
+                  required
+                />
+              </div>
+
+
+              {/* negative marking */}
+              <div className="space-y-2">
+                <Label htmlFor="negativeMarks">
+                  Negative Marking
+                </Label>
+
+                <Input
+                  id="negativeMarks"
+                  name="negativeMarks"
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={form.negativeMarks}
+                  onChange={handleChange}
+                  placeholder="e.g. 0.50"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
 
@@ -168,12 +311,14 @@ export default function NewTestPage() {
               </select>
             </div>
 
+            {/* Error */}
             {error && (
               <p className="text-sm text-destructive">
                 {error}
               </p>
             )}
 
+            {/* Buttons */}
             <div className="flex justify-end gap-3">
               <Button
                 type="button"

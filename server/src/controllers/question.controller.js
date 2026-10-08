@@ -19,7 +19,7 @@ export const createQuestion = async (req, res) => {
         }
 
         const testData = await Test.findById(test);
-         console.log("testData",testData)
+        //  console.log("testData",testData)
 
         if (!testData) {
             return res.status(404).json({

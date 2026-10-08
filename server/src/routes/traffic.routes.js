@@ -1,9 +1,6 @@
 import express from "express";
 
-import {
-    recordVisit,
-    getTrafficStats,
-} from "../controllers/traffic.controller.js";
+import {recordVisit,getTrafficStats} from "../controllers/traffic.controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/authorize.middleware.js";

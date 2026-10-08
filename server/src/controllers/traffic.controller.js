@@ -1,9 +1,9 @@
-import Visit from "../models/visit.model";
+import Visit from "../models/visit.model.js";
 
 export const recordVisit = async (req, res) => {
     try {
         const { visitorId } = req.body;
-
+    
         if (!visitorId) {
             return res.status(400).json({
                 message: "visitorId is required",

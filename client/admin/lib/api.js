@@ -3,8 +3,6 @@ const API_URL = "http://localhost:5000/api";
 export const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_URL}${endpoint}`;
 
-  console.log("API REQUEST:", url);
-
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -13,25 +11,28 @@ export const apiRequest = async (endpoint, options = {}) => {
     },
   });
 
-  const contentType = response.headers.get("content-type");
+  const text = await response.text();
 
+  console.log("API URL:", url);
   console.log("API STATUS:", response.status);
-  console.log("API CONTENT TYPE:", contentType);
+  console.log("API RESPONSE:", text);
 
-  if (!contentType?.includes("application/json")) {
-    const text = await response.text();
+  let data;
 
-    console.error("NON-JSON RESPONSE:", text);
-
+  try {
+    data = JSON.parse(text);
+  } catch {
     throw new Error(
-      `Server returned non-JSON response (${response.status})`
+      `Server returned invalid response (${response.status}): ${text}`
     );
   }
 
-  const data = await response.json();
-
   if (!response.ok) {
-    throw new Error(data.message || "Something went wrong");
+    throw new Error(
+      data.message ||
+      data.error ||
+      `Request failed with status ${response.status}`
+    );
   }
 
   return data;

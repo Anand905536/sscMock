@@ -9,7 +9,7 @@ import authRoutes from './routes/auth.routes.js'
 import { protect } from "./middleware/auth.middleware.js";
 import { authorize } from "./middleware/authorize.middleware.js";
 import userRoutes from "./routes/user.routes.js";
-import trafficRoutes from "./routes/traffic.routes.js";
+import trafficRoutes from "./routes/traffic.routes.js"
 
 const app = express();
 app.use(cors())
@@ -29,7 +29,7 @@ app.use('/api/questions', questionsRoutes)
 app.use('/api/attempts', attemptRoutes)
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/traffic", trafficRoutes);
+// app.use("/api/traffic", trafficRoutes);
 
 app.get("/api/auth/me", protect, (req, res) => {
     res.json({

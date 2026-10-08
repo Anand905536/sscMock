@@ -10,6 +10,17 @@ const testSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    subject: {
+        type: String,
+        required: true,
+        enum: ["English", "General Studies"],
+    },
+
+    topic: {
+        type: String,
+        required: true,
+        trim: true,
+    },
     category: {
         type: String,
         required: true,
@@ -18,6 +29,19 @@ const testSchema = new mongoose.Schema({
     durationMinutes: {
         type: Number,
         required: true
+    },
+    marksPerQuestion: {
+        type: Number,
+        required: true,
+        default: 1,
+        min: 0,
+    },
+
+    negativeMarks: {
+        type: Number,
+        required: true,
+        default: 0,
+        min: 0,
     },
     status: {
         type: String,
