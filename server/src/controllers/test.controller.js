@@ -80,7 +80,7 @@ export const createTest = async (req, res) => {
 
 // get all tests
 export const getTests = async (req, res) => {
-    console.log("inside get tests", req.query.subject, req.query.topic)
+    
     try {
         let query = Test.find();
 

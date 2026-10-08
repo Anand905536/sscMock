@@ -221,7 +221,7 @@ export default function AttemptPage() {
                     </div>
 
                     <div className="rounded-xl border border-gray-200 p-6">
-                        <h2 className="text-lg font-medium leading-7 text-black">
+                        <h2 className="cursor-pointer text-lg font-bold leading-7 text-black">
                             {question.questionText}
                         </h2>
 
@@ -231,9 +231,9 @@ export default function AttemptPage() {
                                     key={index}
                                     type="button"
                                     onClick={() => handleAnswer(option)}
-                                    className={`w-full rounded-lg border px-4 py-3 text-left text-sm ${selectedAnswer === option
-                                            ? "border-black bg-gray-100 text-black"
-                                            : "border-gray-200 text-gray-700 hover:border-gray-400"
+                                    className={`cursor-pointer w-full rounded-lg border px-4 py-3 text-left text-sm ${selectedAnswer === option
+                                            ? "border-black bg-gray-400 text-white"
+                                            : "border-gray-200 text-gray-700 hover:border-gray-400 "
                                         }`}
                                 >
                                     <span className="mr-3 font-medium">
@@ -265,7 +265,7 @@ export default function AttemptPage() {
                                         key={item._id}
                                         type="button"
                                         onClick={() => setCurrentIndex(index)}
-                                        className={`flex h-9 w-9 items-center justify-center rounded-md border text-xs font-medium ${answered
+                                        className={`cursor-pointer flex h-9 w-9 items-center justify-center rounded-md border text-xs font-medium ${answered
                                                 ? "border-green-600 bg-green-500 text-white"
                                                 : "border-gray-300 bg-white text-gray-700"
                                             } ${current
@@ -288,7 +288,7 @@ export default function AttemptPage() {
                             onClick={() =>
                                 setCurrentIndex((previous) => previous - 1)
                             }
-                            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm disabled:opacity-40"
+                            className="cursor-pointer rounded-lg border border-gray-300 px-5 py-2.5 text-sm disabled:opacity-40"
                         >
                             Previous
                         </button>
@@ -298,7 +298,7 @@ export default function AttemptPage() {
                                 type="button"
                                 disabled={submitting}
                                 onClick={() => handleSubmit(false)}
-                                className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+                                className="cursor-pointer rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
                             >
                                 {submitting
                                     ? "Submitting..."
@@ -310,7 +310,7 @@ export default function AttemptPage() {
                                 onClick={() =>
                                     setCurrentIndex((previous) => previous + 1)
                                 }
-                                className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white"
+                                className="cursor-pointer rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white"
                             >
                                 Next
                             </button>
@@ -342,8 +342,8 @@ export default function AttemptPage() {
                                     key={item._id}
                                     type="button"
                                     onClick={() => setCurrentIndex(index)}
-                                    className={`flex h-9 w-9 items-center justify-center rounded-md border text-xs font-medium ${answered
-                                            ? "border-green-600 bg-green-500 text-white"
+                                    className={`cursor-pointer flex h-9 w-9 items-center justify-center rounded-md border text-xs font-medium ${answered
+                                            ? "border-green-400 bg-green-400 text-white"
                                             : "border-gray-300 bg-white text-gray-700"
                                         } ${current
                                             ? "ring-2 ring-black ring-offset-1"

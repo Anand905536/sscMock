@@ -62,7 +62,7 @@ export const login = async (req, res) => {
         const { email, password } = req.body
 
         if (!email || !password) {
-            res.status(400).json({
+            return res.status(400).json({
                 message: "Email and Password are required"
             })
         }
@@ -70,7 +70,7 @@ export const login = async (req, res) => {
         const user = await User.findOne({ email })
 
         if (!user) {
-            res.status(401).json({
+            return res.status(401).json({
                 message: "Invalid email or password"
             })
         }
@@ -80,7 +80,7 @@ export const login = async (req, res) => {
         )
 
         if (!isPasswordCorrect) {
-            res.status(401).json({
+           return res.status(401).json({
                 message: "Invalid email or password"
             })
         }

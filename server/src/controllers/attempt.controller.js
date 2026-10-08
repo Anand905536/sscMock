@@ -93,11 +93,13 @@ export const getAttemptResults = async (req, res) => {
     // Calculate correct / incorrect / unanswered
     const questions = await Question.find({
       test: attempt.test._id,
-    }).select("_id correctAnswer");
+    }).select("_id questionText options correctAnswer explanation");
 
     let correctAnswers = 0;
     let incorrectAnswers = 0;
     let unanswered = 0;
+
+    const questionResults = [];
 
     const submittedAnswers = new Map();
 
@@ -118,12 +120,42 @@ export const getAttemptResults = async (req, res) => {
         selectedAnswer === ""
       ) {
         unanswered++;
+
+        questionResults.push({
+          questionId: question._id,
+          questionText: question.questionText,
+          options: question.options,
+          explanation: question.explanation,
+          selectedAnswer: "",
+          correctAnswer: question.correctAnswer,
+          status: "unanswered",
+        });
       } else if (
         selectedAnswer === question.correctAnswer
       ) {
         correctAnswers++;
+
+        questionResults.push({
+          questionId: question._id,
+          questionText: question.questionText,
+          options: question.options,
+          explanation: question.explanation,
+          selectedAnswer,
+          correctAnswer: question.correctAnswer,
+          status: "correct",
+        });
       } else {
         incorrectAnswers++;
+
+        questionResults.push({
+          questionId: question._id,
+          questionText: question.questionText,
+          options: question.options,
+          explanation: question.explanation,
+          selectedAnswer,
+          correctAnswer: question.correctAnswer,
+          status: "incorrect",
+        });
       }
     }
 
@@ -145,9 +177,11 @@ export const getAttemptResults = async (req, res) => {
         correctAnswers,
         incorrectAnswers,
         unanswered,
+        questionResults,
         startedAt: attempt.startedAt,
         completedAt: attempt.completedAt,
         status: attempt.status,
+
       },
     });
   } catch (error) {
@@ -437,7 +471,7 @@ export const getMyAttempts = async (req, res) => {
         totalQuestions: attempt.totalQuestions,
         maximumMarks,
         marksPerQuestion,
-        negativeMarks,
+        negativeMarks: attempt.test?.negativeMarks ?? 0,
         percentage: Number(
           percentage.toFixed(2)
         ),
