@@ -9,7 +9,7 @@ export default function GoogleCallbackPage() {
   useEffect(() => {
     const token = searchParams.get("token");
     const user = searchParams.get("user");
-
+     console.log("user",user)
     if (!token || !user) {
       window.location.href = "/login?error=google_login_failed";
       return;

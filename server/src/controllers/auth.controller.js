@@ -54,7 +54,6 @@ export const register = async (req, res) => {
     }
 }
 
-
 // export login
 
 export const login = async (req, res) => {
@@ -80,7 +79,7 @@ export const login = async (req, res) => {
         )
 
         if (!isPasswordCorrect) {
-           return res.status(401).json({
+            return res.status(401).json({
                 message: "Invalid email or password"
             })
         }
@@ -104,6 +103,7 @@ export const login = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                profilePicture: user.profilePicture,
             }
         })
     } catch (err) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ThreeDots } from 'react-loader-spinner';
 
 export default function TestInstructionsPage() {
   const { id } = useParams();
@@ -88,7 +89,7 @@ export default function TestInstructionsPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <p>Loading test...</p>
+        <ThreeDots/>
       </main>
     );
   }
@@ -105,11 +106,11 @@ export default function TestInstructionsPage() {
     <main className="min-h-screen bg-white">
       <div className="mx-auto max-w-3xl px-6 py-12">
         <div className="mb-8">
-          <p className="mb-2 text-sm text-gray-500">
+          <p className="mb-2 text-sm text-gray-600">
             {test.subject} • {test.topic}
           </p>
 
-          <h1 className="text-3xl font-bold text-black">
+          <h1 className="text-3xl font-bold text-gray-600">
             {test.title}
           </h1>
 
@@ -123,28 +124,28 @@ export default function TestInstructionsPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="rounded-lg border border-gray-200 p-4">
             <p className="text-sm text-gray-500">Duration</p>
-            <p className="mt-1 font-semibold text-black">
+            <p className="mt-1 font-semibold text-gray-700">
               {test.durationMinutes} minutes
             </p>
           </div>
 
           <div className="rounded-lg border border-gray-200 p-4">
             <p className="text-sm text-gray-500">Subject</p>
-            <p className="mt-1 font-semibold text-black">
+            <p className="mt-1 font-semibold text-gray-700">
               {test.subject}
             </p>
           </div>
 
           <div className="rounded-lg border border-gray-200 p-4">
             <p className="text-sm text-gray-500">Topic</p>
-            <p className="mt-1 font-semibold text-black">
+            <p className="mt-1 font-semibold text-gray-700">
               {test.topic}
             </p>
           </div>
         </div>
 
         <div className="mt-8 rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-black">
+          <h2 className="text-lg font-semibold text-gray-700">
             Instructions
           </h2>
 
@@ -160,7 +161,7 @@ export default function TestInstructionsPage() {
         <button
           onClick={handleStartTest}
           disabled={starting}
-          className="mt-8 w-full rounded-lg bg-black px-6 py-3 text-sm font-medium text-white disabled:opacity-50"
+          className="bg-gray-600 mt-8 w-full rounded-lg cursor-pointer hover:bg-gray-500 px-6 py-3 text-sm font-medium text-white disabled:opacity-50"
         >
           {starting ? "Starting Test..." : "Start Test"}
         </button>

@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { ThreeDots } from 'react-loader-spinner';
+
 
 export default function AttemptPage() {
     const { id } = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const [showSubmitModal, setShowSubmitModal] = useState(false);
 
     const attemptId = searchParams.get("attemptId");
 
@@ -14,9 +17,46 @@ export default function AttemptPage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState({});
     const [timeLeft, setTimeLeft] = useState(0);
-
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [visitedQuestions, setVisitedQuestions] = useState([0]);
+    const autoSubmitTriggered = useRef(false);
+
+    useEffect(() => {
+        setVisitedQuestions((previous) =>
+            previous.includes(currentIndex)
+                ? previous
+                : [...previous, currentIndex]
+        );
+    }, [currentIndex]);
+
+
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            sessionStorage.setItem(
+                `test-refreshed-${id}`,
+                "true"
+            );
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        const wasRefreshed = sessionStorage.getItem(
+            `test-refreshed-${id}`
+        );
+
+        if (wasRefreshed === "true") {
+            sessionStorage.removeItem(`test-refreshed-${id}`);
+            router.replace(`/tests/${id}`);
+        }
+
+        return () => {
+            window.removeEventListener(
+                "beforeunload",
+                handleBeforeUnload
+            );
+        };
+    }, [id, router]);
 
     useEffect(() => {
         const loadTest = async () => {
@@ -85,23 +125,33 @@ export default function AttemptPage() {
         loadTest();
     }, [id, attemptId, router]);
 
+    // Countdown timer
     useEffect(() => {
-        if (loading || timeLeft <= 0) return;
+        if (loading || questions.length === 0 || timeLeft <= 0) {
+            return;
+        }
 
-        const timer = setInterval(() => {
-            setTimeLeft((previous) => {
-                if (previous <= 1) {
-                    clearInterval(timer);
-                    handleSubmit(true);
-                    return 0;
-                }
-
-                return previous - 1;
-            });
+        const timer = setTimeout(() => {
+            setTimeLeft((previous) => Math.max(0, previous - 1));
         }, 1000);
 
-        return () => clearInterval(timer);
-    }, [loading, timeLeft]);
+        return () => clearTimeout(timer);
+    }, [loading, questions.length, timeLeft]);
+
+    // Automatically submit when the timer reaches zero
+    useEffect(() => {
+        if (
+            loading ||
+            questions.length === 0 ||
+            timeLeft !== 0 ||
+            autoSubmitTriggered.current
+        ) {
+            return;
+        }
+
+        autoSubmitTriggered.current = true;
+        handleSubmit(true);
+    }, [loading, questions.length, timeLeft]);
 
     const handleAnswer = (answer) => {
         const question = questions[currentIndex];
@@ -114,14 +164,6 @@ export default function AttemptPage() {
 
     const handleSubmit = async (autoSubmit = false) => {
         if (submitting) return;
-
-        if (!autoSubmit) {
-            const confirmed = window.confirm(
-                "Are you sure you want to submit the test?"
-            );
-
-            if (!confirmed) return;
-        }
 
         try {
             setSubmitting(true);
@@ -150,15 +192,24 @@ export default function AttemptPage() {
             const data = await response.json();
 
             if (!response.ok) {
-                alert(data.message || "Failed to submit test");
+                if (!autoSubmit) {
+                    alert(data.message || "Failed to submit test");
+                }
+
                 setSubmitting(false);
                 return;
             }
 
-            router.push(`/tests/${id}/result?attemptId=${attemptId}`);
+            router.replace(
+                `/tests/${id}/result?attemptId=${attemptId}`
+            );
         } catch (error) {
-            console.error(error);
-            alert("Something went wrong while submitting");
+            console.error("Submit test error:", error);
+
+            if (!autoSubmit) {
+                alert("Something went wrong while submitting");
+            }
+
             setSubmitting(false);
         }
     };
@@ -175,7 +226,7 @@ export default function AttemptPage() {
     if (loading) {
         return (
             <main className="flex min-h-screen items-center justify-center">
-                <p>Loading test...</p>
+                <ThreeDots />
             </main>
         );
     }
@@ -198,14 +249,34 @@ export default function AttemptPage() {
                     Test
                 </h1>
 
-                <div className="font-mono text-sm font-semibold text-black">
-                    {formatTime(timeLeft)}
+                <div className="flex items-center gap-5">
+                    <div className="font-mono text-sm font-semibold text-black">
+                        {formatTime(timeLeft)}
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            try {
+                                if (!document.fullscreenElement) {
+                                    await document.documentElement.requestFullscreen();
+                                } else {
+                                    await document.exitFullscreen();
+                                }
+                            } catch (error) {
+                                console.error("Fullscreen error:", error);
+                            }
+                        }}
+                        className=" cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-600 hover:text-white"
+                    >
+                        {`Fullscreen`}
+                    </button>
                 </div>
             </header>
 
             <div className="mx-auto flex max-w-6xl gap-6 px-6 py-8">
 
-              
+
 
                 {/* Question Area */}
                 <div className="min-w-0 flex-1">
@@ -232,8 +303,8 @@ export default function AttemptPage() {
                                     type="button"
                                     onClick={() => handleAnswer(option)}
                                     className={`cursor-pointer w-full rounded-lg border px-4 py-3 text-left text-sm ${selectedAnswer === option
-                                            ? "border-black bg-gray-400 text-white"
-                                            : "border-gray-200 text-gray-700 hover:border-gray-400 "
+                                        ? "border-black bg-gray-400 text-white"
+                                        : "border-gray-200 text-gray-700 hover:border-gray-400 "
                                         }`}
                                 >
                                     <span className="mr-3 font-medium">
@@ -266,8 +337,8 @@ export default function AttemptPage() {
                                         type="button"
                                         onClick={() => setCurrentIndex(index)}
                                         className={`cursor-pointer flex h-9 w-9 items-center justify-center rounded-md border text-xs font-medium ${answered
-                                                ? "border-green-600 bg-green-500 text-white"
-                                                : "border-gray-300 bg-white text-gray-700"
+                                            ? "border-green-600 bg-green-500 text-white"
+                                            : "border-gray-300 bg-white text-gray-700"
                                             } ${current
                                                 ? "ring-2 ring-black ring-offset-1"
                                                 : ""
@@ -297,12 +368,10 @@ export default function AttemptPage() {
                             <button
                                 type="button"
                                 disabled={submitting}
-                                onClick={() => handleSubmit(false)}
-                                className="cursor-pointer rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+                                onClick={() => setShowSubmitModal(true)}
+                                className="cursor-pointer rounded-lg bg-gray-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-500 disabled:opacity-50"
                             >
-                                {submitting
-                                    ? "Submitting..."
-                                    : "Submit Test"}
+                                Submit Test
                             </button>
                         ) : (
                             <button
@@ -310,7 +379,7 @@ export default function AttemptPage() {
                                 onClick={() =>
                                     setCurrentIndex((previous) => previous + 1)
                                 }
-                                className="cursor-pointer rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white"
+                                className="cursor-pointer rounded-lg bg-gray-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-500"
                             >
                                 Next
                             </button>
@@ -319,7 +388,7 @@ export default function AttemptPage() {
                 </div>
 
 
-                  {/* Question Palette */}
+                {/* Question Palette */}
                 <aside className="hidden w-64 shrink-0 rounded-xl border border-gray-200 p-5 lg:block">
                     <h2 className="text-sm font-semibold text-black">
                         Questions
@@ -343,8 +412,8 @@ export default function AttemptPage() {
                                     type="button"
                                     onClick={() => setCurrentIndex(index)}
                                     className={`cursor-pointer flex h-9 w-9 items-center justify-center rounded-md border text-xs font-medium ${answered
-                                            ? "border-green-400 bg-green-400 text-white"
-                                            : "border-gray-300 bg-white text-gray-700"
+                                        ? "border-green-400 bg-green-400 text-white"
+                                        : "border-gray-300 bg-white text-gray-700"
                                         } ${current
                                             ? "ring-2 ring-black ring-offset-1"
                                             : ""
@@ -369,6 +438,106 @@ export default function AttemptPage() {
                     </div>
                 </aside>
             </div>
+
+            {/* modal for confirmation */}
+
+            {showSubmitModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="submit-modal-title"
+                        className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl sm:p-8"
+                    >
+                        <h2
+                            id="submit-modal-title"
+                            className="text-2xl font-bold text-black"
+                        >
+                            Submit Test?
+                        </h2>
+
+                        <p className="mt-2 text-sm text-gray-500">
+                            Review your progress before submitting your test.
+                        </p>
+
+                        <div className="mt-6 grid grid-cols-2 gap-4">
+                            <div className="rounded-xl border border-gray-200 p-4">
+                                <p className="text-sm text-gray-500">
+                                    Total Questions
+                                </p>
+                                <p className="mt-2 text-3xl font-bold text-black">
+                                    {questions.length}
+                                </p>
+                            </div>
+
+                            <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+                                <p className="text-sm text-green-700">
+                                    Attempted
+                                </p>
+                                <p className="mt-2 text-3xl font-bold text-green-700">
+                                    {questions.filter(
+                                        (question) =>
+                                            answers[question._id] !== undefined &&
+                                            answers[question._id] !== ""
+                                    ).length}
+                                </p>
+                            </div>
+
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                                <p className="text-sm text-red-700">
+                                    Not Attempted
+                                </p>
+                                <p className="mt-2 text-3xl font-bold text-red-700">
+                                    {questions.filter(
+                                        (question) =>
+                                            answers[question._id] === undefined ||
+                                            answers[question._id] === ""
+                                    ).length}
+                                </p>
+                            </div>
+
+                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                <p className="text-sm text-gray-600">
+                                    Not Visited
+                                </p>
+                                <p className="mt-2 text-3xl font-bold text-gray-700">
+                                    {questions.length - visitedQuestions.length}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                type="button"
+                                disabled={submitting}
+                                onClick={() => setShowSubmitModal(false)}
+                                className="cursor-pointer flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-black hover:bg-gray-100 disabled:opacity-50"
+                            >
+                                Close
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={submitting}
+                                onClick={() => handleSubmit(false)}
+                                className="flex-1 rounded-lg bg-gray-600 px-4 py-3 text-sm font-medium text-white hover:bg-gray-800 cursor-pointer disabled:opacity-50"
+                            >
+                                {submitting ? (
+                                    <span className="inline-flex items-center justify-center gap-2">
+                                        <span className="h-2 w-2 animate-bounce rounded-full bg-white [animation-delay:-0.3s]" />
+                                        <span className="h-2 w-2 animate-bounce rounded-full bg-white [animation-delay:-0.15s]" />
+                                        <span className="h-2 w-2 animate-bounce rounded-full bg-white" />
+                                    </span>
+                                ) : (
+                                    "Submit Test"
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
         </main>
     );
 }

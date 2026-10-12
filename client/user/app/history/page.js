@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ThreeDots } from "react-loader-spinner";
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white">
-        <p className="text-gray-500">Loading history...</p>
+        <ThreeDots/>
       </main>
     );
   }

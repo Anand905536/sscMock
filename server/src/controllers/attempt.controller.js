@@ -46,7 +46,7 @@ export const getAttemptResults = async (req, res) => {
     const completedAttempts = await Attempt.find({
       test: attempt.test._id,
       status: "completed",
-    }).select("user score");
+    }).select("user score totalQuestions");
 
     // Find each candidate's best score
     const bestScoreByUser = new Map();
@@ -58,37 +58,80 @@ export const getAttemptResults = async (req, res) => {
 
       if (
         existingBest === undefined ||
-        candidateAttempt.score > existingBest
+        candidateAttempt.score > existingBest.score
       ) {
-        bestScoreByUser.set(
-          userId,
-          candidateAttempt.score
-        );
+        bestScoreByUser.set(userId, {
+          score: candidateAttempt.score,
+          totalQuestions: candidateAttempt.totalQuestions,
+        });
       }
     }
 
-    const candidateScores = Array.from(
-      bestScoreByUser.values()
-    );
+    const candidateResults = Array.from(bestScoreByUser.values());
 
-    const totalCandidates = candidateScores.length;
+    // Convert scores to the current test's percentage scale.
+    // This keeps comparisons consistent if question counts changed.
+    const candidatePercentages = candidateResults.map((candidate) => {
+      const candidateMaximum =
+        candidate.totalQuestions * marksPerQuestion;
 
-    // Number of candidates whose best score is lower
-    const candidatesBelow = candidateScores.filter(
-      (candidateScore) => candidateScore < score
+      return candidateMaximum > 0
+        ? Math.min(
+          100,
+          (candidate.score / candidateMaximum) * 100
+        )
+        : 0;
+    });
+
+    const totalCandidates = candidatePercentages.length;
+
+    const averagePercentage =
+      totalCandidates > 0
+        ? candidatePercentages.reduce((sum, value) => sum + value, 0) /
+        totalCandidates
+        : 0;
+
+    const highestPercentage =
+      totalCandidates > 0
+        ? Math.max(...candidatePercentages)
+        : 0;
+
+    // Convert the percentages to this test's marks scale
+    const averageMarks = (averagePercentage / 100) * maximumMarks;
+    const highestMarks = (highestPercentage / 100) * maximumMarks;
+
+    // Current student's best score percentage
+    const currentUserBest = bestScoreByUser.get(user.toString());
+
+    const currentUserMaximum = currentUserBest
+      ? currentUserBest.totalQuestions * marksPerQuestion
+      : maximumMarks;
+
+    const currentUserPercentage =
+      currentUserBest && currentUserMaximum > 0
+        ? (currentUserBest.score / currentUserMaximum) * 100
+        : percentage;
+
+    // Rank and percentile based on the student's best result
+    const candidatesBelow = candidatePercentages.filter(
+      (value) => value < currentUserPercentage
+    ).length;
+
+    const candidatesTied = candidatePercentages.filter(
+      (value) => value === currentUserPercentage
     ).length;
 
     const percentile =
       totalCandidates > 0
-        ? (candidatesBelow / totalCandidates) * 100
+        ? ((candidatesBelow + 0.5 * candidatesTied) / totalCandidates) * 100
         : 0;
 
-    // Calculate rank
-    const candidatesAbove = candidateScores.filter(
-      (candidateScore) => candidateScore > score
+    const candidatesAbove = candidatePercentages.filter(
+      (value) => value > currentUserPercentage
     ).length;
 
     const rank = candidatesAbove + 1;
+
 
     // Calculate correct / incorrect / unanswered
     const questions = await Question.find({
@@ -159,6 +202,31 @@ export const getAttemptResults = async (req, res) => {
       }
     }
 
+   // Histogram: divide maximum marks into 5 equal ranges
+const marksDistribution = [];
+
+const interval = maximumMarks / 5;
+
+for (let i = 0; i < 5; i++) {
+  const start = i * interval;
+  const end = (i + 1) * interval;
+
+  const students = candidatePercentages.filter((percentage) => {
+    const candidateMarks = (percentage / 100) * maximumMarks;
+
+    if (i === 4) {
+      return candidateMarks >= start && candidateMarks <= end;
+    }
+
+    return candidateMarks >= start && candidateMarks < end;
+  }).length;
+
+  marksDistribution.push({
+    range: `${Number(start.toFixed(2))}–${Number(end.toFixed(2))}`,
+    students,
+  });
+}
+
     res.status(200).json({
       message: "Attempt result fetched successfully",
 
@@ -166,6 +234,8 @@ export const getAttemptResults = async (req, res) => {
         attemptId: attempt._id,
         test: attempt.test,
         score,
+        averageMarks: Number(averageMarks.toFixed(2)),
+        highestMarks: Number(highestMarks.toFixed(2)),
         totalQuestions,
         maximumMarks,
         marksPerQuestion,
@@ -178,6 +248,7 @@ export const getAttemptResults = async (req, res) => {
         incorrectAnswers,
         unanswered,
         questionResults,
+        marksDistribution,
         startedAt: attempt.startedAt,
         completedAt: attempt.completedAt,
         status: attempt.status,
@@ -185,10 +256,12 @@ export const getAttemptResults = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to fetch attempt result",
-      error: error.message,
-    });
+    console.error("getAttemptResults error:", error);
+
+  res.status(500).json({
+    message: "Failed to fetch attempt result",
+    error: error.message,
+  });
   }
 };
 

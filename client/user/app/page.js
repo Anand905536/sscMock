@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
+import { LogOut, UserRound, UserCircle } from "lucide-react";
 
 const englishTopics = [
   "Vocabulary",
@@ -42,9 +42,21 @@ const gsTopics = [
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("token"));
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+
+    const savedUser = localStorage.getItem("user");
+
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("user");
+      }
+    }
   }, []);
 
   const handleLogout = () => {
@@ -67,17 +79,41 @@ export default function HomePage() {
         </Link>
 
         {isLoggedIn ? (
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white"
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </button>
+          <div className="flex items-center gap-3 ">
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 rounded-lg  px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+
+              {currentUser?.profilePicture ? (
+                <img
+                  src={
+                    currentUser.profilePicture.startsWith("http")
+                      ? currentUser.profilePicture
+                      : `http://localhost:5000${currentUser.profilePicture}`
+                  }
+                  alt="Profile"
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <UserCircle className="h-8 w-8" />
+              )}
+
+              <span>{currentUser?.name || "My Profile"}</span>
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="flex cursor-pointer items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          </div>
         ) : (
           <Link
             href="/login"
-            className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white"
+            className="cursor-pointer rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
           >
             Sign in
           </Link>
@@ -96,16 +132,16 @@ export default function HomePage() {
               {/* Connecting line */}
               {/* <div className="absolute left-0 right-0 top-1/2 hidden h-px bg-gray-200 lg:block" /> */}
 
-              <div className="relative grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              <div className=" relative grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 {englishTopics.map((topic) => (
                   <Link
                     key={topic}
                     href={`/subjects/english/${encodeURIComponent(
                       topic.toLowerCase().replaceAll(" ", "-")
                     )}`}
-                    className="relative z-10 rounded-xl border border-gray-200 bg-white p-5 text-center shadow-sm"
+                    className=" transition-colors duration-600 hover:bg-green-100 hover relative z-10 rounded-xl border border-gray-200 bg-white p-5 text-center text-gray-600 shadow-md"
                   >
-                    <h2 className="text-sm font-semibold text-black">
+                    <h2 className="text-sm font-semibold">
                       {topic}
                     </h2>
                   </Link>
@@ -133,9 +169,9 @@ export default function HomePage() {
                     href={`/subjects/general-studies/${encodeURIComponent(
                       topic.toLowerCase().replaceAll(" ", "-")
                     )}`}
-                    className="relative z-10 rounded-xl border border-gray-200 bg-white p-5 text-center shadow-sm"
+                    className="transition-colors duration-600 text-gray-600 hover:bg-green-100 relative z-10 rounded-xl border border-gray-200 bg-white p-5 text-center shadow-md"
                   >
-                    <h2 className="text-sm font-semibold text-black">
+                    <h2 className="text-sm font-semibold   ">
                       {topic}
                     </h2>
                   </Link>

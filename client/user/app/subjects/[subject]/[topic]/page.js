@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock } from "lucide-react";
+import { ThreeDots } from "react-loader-spinner";
 
 const topicMap = {
   english: {
@@ -58,7 +59,7 @@ export default function TopicTestsPage() {
     const fetchTests = async () => {
       try {
         const token = localStorage.getItem("token");
-          console.log("token",token)
+        console.log("token", token)
         if (!token) {
           router.push("/login");
           return;
@@ -118,7 +119,7 @@ export default function TopicTestsPage() {
       <nav className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
         <Link
           href="/"
-          className="text-xl font-bold tracking-tight text-black"
+          className="text-xl font-bold tracking-tight text-gray-600"
         >
           sscMock
         </Link>
@@ -129,7 +130,7 @@ export default function TopicTestsPage() {
             localStorage.removeItem("user");
             window.location.href = "/login";
           }}
-          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white"
+          className="cursor-pointer rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white"
         >
           Logout
         </button>
@@ -139,18 +140,18 @@ export default function TopicTestsPage() {
       <section className="mx-auto max-w-5xl px-6 py-10">
         <button
           onClick={() => router.back()}
-          className="mb-6 flex items-center text-sm font-medium text-gray-600 hover:text-black"
+          className="hover:cursor-pointer mb-6 flex items-center text-sm font-medium text-gray-600 hover:text-black"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </button>
 
         <div className="mb-8">
-          <p className="text-sm font-medium text-gray-500">
+          {/* <p className="text-sm font-medium text-gray-500">
             {subjectTitle}
-          </p>
+          </p> */}
 
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-black">
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-600">
             {topicName || "Topic"}
           </h1>
 
@@ -160,9 +161,16 @@ export default function TopicTestsPage() {
         </div>
 
         {loading && (
-          <p className="text-gray-500">
-            Loading tests...
-          </p>
+          <ThreeDots
+            height="50"
+            width="50"
+            radius="5"
+            color="#4fa94d"
+            ariaLabel="three-dots-loading"
+            wrapperStyle={{ margin: '20px' }}
+            wrapperClass="custom-loader"
+            visible={true}
+          />
         )}
 
         {error && (
@@ -185,11 +193,11 @@ export default function TopicTestsPage() {
         )}
 
         {!loading && !error && tests.length > 0 && (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 ">
             {tests.map((test) => (
               <div
                 key={test._id}
-                className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+                className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg"
               >
                 <h2 className="text-lg font-semibold text-black">
                   {test.title}
@@ -208,7 +216,8 @@ export default function TopicTestsPage() {
 
                 <Link
                   href={`/tests/${test._id}`}
-                  className="mt-5 block rounded-md bg-black px-4 py-2.5 text-center text-sm font-medium text-white"
+                  className="bg-gray-600 mt-5 block rounded-md px-4 py-2.5 text-center 
+                  text-sm font-medium text-white hover:bg-gray-500"
                 >
                   Start Test
                 </Link>

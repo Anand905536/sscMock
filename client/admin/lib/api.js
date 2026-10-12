@@ -13,9 +13,9 @@ export const apiRequest = async (endpoint, options = {}) => {
 
   const text = await response.text();
 
-  console.log("API URL:", url);
-  console.log("API STATUS:", response.status);
-  console.log("API RESPONSE:", text);
+  // console.log("API URL:", url);
+  // console.log("API STATUS:", response.status);
+  // console.log("API RESPONSE:", text);
 
   let data;
 

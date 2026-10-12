@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ThreeDots } from "react-loader-spinner";
 
 export default function AnalysisPage() {
     const { id, attemptId } = useParams();
@@ -53,11 +54,7 @@ export default function AnalysisPage() {
     if (loading) {
         return (
             <main className="flex min-h-screen items-center justify-center bg-white">
-                <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-black [animation-delay:-0.3s]" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-black [animation-delay:-0.15s]" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-black" />
-                </div>
+               <ThreeDots/>
             </main>
         );
     }
@@ -76,7 +73,7 @@ export default function AnalysisPage() {
         <main className="min-h-screen bg-gray-50">
             <header className="border-b border-gray-200 bg-white">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-                    <div>
+                    <div className="cursor-pointer">
                         <h1 className="font-semibold text-black">
                             {result.test.title}
                         </h1>
@@ -93,7 +90,7 @@ export default function AnalysisPage() {
                                 `/tests/${id}/result?attemptId=${attemptId}`
                             )
                         }
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-black"
+                        className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-black"
                     >
                         Back to Result
                     </button>
@@ -156,7 +153,7 @@ export default function AnalysisPage() {
                                             return (
                                                 <div
                                                     key={index}
-                                                    className={`rounded-lg border px-4 py-4 text-sm ${isCorrect
+                                                    className={`cursor-pointer rounded-lg border px-4 py-4 text-sm ${isCorrect
                                                             ? "border-green-300 bg-green-50 text-green-800"
                                                             : isSelected
                                                                 ? "border-red-300 bg-red-50 text-red-800"
@@ -198,7 +195,7 @@ export default function AnalysisPage() {
                                                     (previous) => previous - 1
                                                 )
                                             }
-                                            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="cursor-pointer rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40"
                                         >
                                             Previous
                                         </button>
@@ -214,7 +211,7 @@ export default function AnalysisPage() {
                                                     (previous) => previous + 1
                                                 )
                                             }
-                                            className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="cursor-pointer rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
                                         >
                                             Next
                                         </button>
@@ -241,7 +238,7 @@ export default function AnalysisPage() {
                             Questions
                         </h2>
 
-                        <div className="mt-4 grid grid-cols-5 gap-2">
+                        <div className=" mt-4 grid grid-cols-5 gap-2">
                             {result.questionResults.map(
                                 (question, index) => (
                                     <button
@@ -250,7 +247,7 @@ export default function AnalysisPage() {
                                         onClick={() =>
                                             setCurrentQuestion(index)
                                         }
-                                        className={`h-9 rounded-md text-sm font-medium ${index === currentQuestion
+                                        className={`cursor-pointer h-9 rounded-md text-sm font-medium ${index === currentQuestion
                                                 ? "ring-2 ring-black ring-offset-1"
                                                 : ""
                                             } ${question.status === "correct"
