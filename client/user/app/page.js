@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut, UserRound, UserCircle } from "lucide-react";
+import { LogOut, UserCircle, ChevronDown, Menu, X } from "lucide-react";
 
 const englishTopics = [
   "Vocabulary",
@@ -41,10 +42,19 @@ const gsTopics = [
 ];
 
 export default function HomePage() {
+
+
+  const pathname = usePathname();
+
+  const [isMounted, setIsMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isTestsOpen, setIsTestsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
 
@@ -59,67 +69,19 @@ export default function HomePage() {
     }
   }, []);
 
+
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
     setIsLoggedIn(false);
+    setCurrentUser(null);
     window.location.href = "/";
   };
 
   return (
     <main className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
-        <Link
-          href="/"
-          className="text-xl font-bold tracking-tight text-black"
-        >
-          Subject Wise
-        </Link>
-
-        {isLoggedIn ? (
-          <div className="flex items-center gap-3 ">
-            <Link
-              href="/profile"
-              className="flex items-center gap-2 rounded-lg  px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-
-              {currentUser?.profilePicture ? (
-                <img
-                  src={
-                    currentUser.profilePicture.startsWith("http")
-                      ? currentUser.profilePicture
-                      : `http://localhost:5000${currentUser.profilePicture}`
-                  }
-                  alt="Profile"
-                  className="h-8 w-8 rounded-full object-cover"
-                />
-              ) : (
-                <UserCircle className="h-8 w-8" />
-              )}
-
-              <span>{currentUser?.name || "My Profile"}</span>
-            </Link>
-
-            <button
-              onClick={handleLogout}
-              className="flex cursor-pointer items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </button>
-          </div>
-        ) : (
-          <Link
-            href="/login"
-            className="cursor-pointer rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
-          >
-            Sign in
-          </Link>
-        )}
-      </nav>
-
       <div className="mx-auto max-w-7xl px-6 py-14">
         {/* English */}
         <section>

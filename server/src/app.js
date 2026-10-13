@@ -11,6 +11,8 @@ import { protect } from "./middleware/auth.middleware.js";
 // import { authorize } from "./middleware/authorize.middleware.js";
 import userRoutes from "./routes/user.routes.js";
 import profileRoutes from './routes/profile.routes.js'
+import fullLengthExamRoutes from "./routes/fullLengthExam.routes.js";
+
 
 const app = express();
 app.use(cors())
@@ -34,6 +36,7 @@ app.use('/api/attempts', attemptRoutes)
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/full-length-exams", fullLengthExamRoutes);
 
 
 app.get("/api/auth/me", protect, (req, res) => {

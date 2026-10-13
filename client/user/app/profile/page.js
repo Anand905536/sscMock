@@ -25,6 +25,7 @@ export default function ProfilePage() {
     const [savingProfile, setSavingProfile] = useState(false);
     const [savingPassword, setSavingPassword] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
+    const [deleteAccount, setDeleteAccount] = useState(false)
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -180,6 +181,61 @@ export default function ProfilePage() {
         );
     }
 
+    // account deletion
+    const handleDelete = async (e) => {
+        e.preventDefault();
+
+        const confirmed = window.confirm(
+            "Are you sure you want to delete your account? This will hide your account."
+        );
+
+        if (!confirmed) return;
+        setDeleteAccount(true);
+        try {
+            const userData = JSON.parse(localStorage.getItem("user") || "{}");
+            const userId = userData.id;
+            const token = localStorage.getItem("token");
+
+            console.log("userId from profile delete paeg ", userId, token)
+            if (!userId || !token) {
+                alert("Please log in again.");
+                router.push("/login");
+                return;
+            }
+
+            const response = await fetch(
+                `http://localhost:5000/api/profile/${userId}/visibility`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.message || "Failed to delete account.");
+                return;
+            }
+
+            alert(data.message || "Account hidden successfully.");
+
+            // Clear the session and redirect to login.
+            localStorage.removeItem("token");
+            localStorage.removeItem("userId");
+
+            router.push("/login");
+        } catch (error) {
+            console.error("Account deletion failed:", error);
+            alert("Unable to connect to the server. Please try again.");
+        } finally {
+            setDeleteAccount(false);
+        }
+    };
+
     return (
         <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 px-4 py-12">
             <div className="mx-auto max-w-2xl rounded-3xl border border-white/60 bg-white/80 p-8 shadow-xl backdrop-blur-xl sm:p-10">
@@ -329,9 +385,24 @@ export default function ProfilePage() {
                     >
                         {savingPassword ? "Updating Password..." : "Update Password"}
                     </button>
+
+
+
                 </form>
 
             </div>
+            {/* for deleting account */}
+            <form onSubmit={handleDelete}>
+                <button
+                    type="submit"
+                    disabled={deleteAccount}
+                    className=" cursor-pointer w-full rounded-xl bg-gradient-to-r from-red-600 to-red-600 py-3 
+                text-sm font-bold text-white shadow-lg shadow-red-200 hover:opacity-95 transition disabled:opacity-50"
+                >
+                    {deleteAccount ? "Deleting..." : "Delete Account "}
+                </button>
+            </form>
+
         </main>
     );
 }

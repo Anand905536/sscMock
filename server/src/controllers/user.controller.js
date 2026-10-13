@@ -47,15 +47,36 @@ export const updateActivity = async (req, res) => {
 export const getUsers = async (req, res) => {
     try {
         const users = await User.find(
-            { role: "user" },
+            {
+                role: "user",
+                visibility: { $ne: false },
+            },
             "-password"
         ).sort({ createdAt: -1 });
 
-        res.status(200).json(users);
+        return res.status(200).json(users);
     } catch (err) {
-        res.status(500).json({
+        return res.status(500).json({
             message: "Failed to fetch users",
             error: err.message,
         });
     }
 };
+
+export const getDeletedUsers = async (req, res) => {
+    try {
+        const users = await User.find({ visibility: false });
+
+        return res.status(200).json({
+            success: true,
+            count: users.length,
+            users,
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch deleted accounts",
+            error: err.message,
+        });
+    }
+}

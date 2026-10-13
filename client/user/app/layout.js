@@ -1,11 +1,14 @@
 import "./globals.css";
-import NavigationProgress from "../components/navigation-progress";
+
+import ConditionalNavbar from "../components/ConditionalNavbar";
+import GoogleOneTap from "@/components/google-one-tap";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <NavigationProgress />
+        <GoogleOneTap />
+        <ConditionalNavbar />
         {children}
       </body>
     </html>

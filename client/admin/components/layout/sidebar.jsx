@@ -29,6 +29,11 @@ const navigation = [
     href: "/questions",
     icon: CircleHelp,
   },
+  {
+    name: "Full-length-exams",
+    href: "/full-length-exams",
+    icon: CircleHelp,
+  },
 ];
 
 export default function Sidebar() {

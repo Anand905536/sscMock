@@ -1,6 +1,7 @@
 import User from "../models/User.model.js";
 import bcrypt from 'bcryptjs'
 
+// get profile
 export const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId).select(
@@ -31,8 +32,7 @@ export const getProfile = async (req, res) => {
     }
 };
 
-// update profile api key 
-
+// update profile 
 export const updateProfile = async (req, res) => {
     console.log("from update profile", req.file)
     try {
@@ -98,9 +98,7 @@ export const updateProfile = async (req, res) => {
     }
 };
 
-
 // change password
-
 export const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
@@ -156,6 +154,37 @@ export const changePassword = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             message: "Failed to change password", error
+        });
+    }
+};
+
+// delete account
+export const deleteAccount = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findByIdAndUpdate(
+            id,
+            { $set: { visibility: false } },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Account hidden successfully",
+            user,
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to hide account",
+            error: err.message,
         });
     }
 };

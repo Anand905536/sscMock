@@ -1,5 +1,10 @@
 import express from "express";
-import { getUserStats, getUsers,updateActivity } from "../controllers/user.controller.js";
+import {
+    getUserStats,
+    getUsers,
+    getDeletedUsers,
+    updateActivity,
+} from "../controllers/user.controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
 import { authorize } from "../middleware/authorize.middleware.js";
@@ -7,7 +12,8 @@ import { authorize } from "../middleware/authorize.middleware.js";
 const router = express.Router();
 
 router.get("/stats", protect, authorize("admin"), getUserStats);
+router.get("/deleted", protect, authorize("admin"), getDeletedUsers);
 router.get("/", protect, authorize("admin"), getUsers);
-router.patch("/activity",protect,updateActivity)
+router.patch("/activity", protect, updateActivity);
 
 export default router;

@@ -51,10 +51,18 @@ export default function DashboardPage() {
             },
           }),
 
+          apiRequest("/full-length-exams", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+
           apiRequest("/users/stats", {
             headers: {
               Authorization: `Bearer ${token}`,
             },
+
+
           }),
         ]);
 
@@ -120,7 +128,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats */}
-       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
           {/* Total Tests */}
           <Card>
@@ -226,29 +234,29 @@ export default function DashboardPage() {
               </p>
             </CardContent>
           </Card>
-             
-              <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
-              Active Users
-            </CardTitle>
 
-            <Users className="h-4 w-4 text-gray-400" />
-          </CardHeader>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Active Users
+              </CardTitle>
 
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
-              {loading ? "..." : userStats.activeUsers}
-            </div>
+              <Users className="h-4 w-4 text-gray-400" />
+            </CardHeader>
 
-            <p className="mt-1 text-xs text-gray-500">
-              Active in last 5 minutes
-            </p>
-          </CardContent>
-        </Card>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {loading ? "..." : userStats.activeUsers}
+              </div>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Active in last 5 minutes
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-       
+
 
         {/* Recent Tests */}
         <Card>

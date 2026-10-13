@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
+    visibility: {
+        type: Boolean,
+        default: true,
+    },
     lastActiveAt: {
         type: Date,
         default: null,

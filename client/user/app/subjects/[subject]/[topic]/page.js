@@ -59,7 +59,6 @@ export default function TopicTestsPage() {
     const fetchTests = async () => {
       try {
         const token = localStorage.getItem("token");
-        console.log("token", token)
         if (!token) {
           router.push("/login");
           return;
@@ -115,26 +114,7 @@ export default function TopicTestsPage() {
 
   return (
     <main className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
-        <Link
-          href="/"
-          className="text-xl font-bold tracking-tight text-gray-600"
-        >
-          sscMock
-        </Link>
-
-        <button
-          onClick={() => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            window.location.href = "/login";
-          }}
-          className="cursor-pointer rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white"
-        >
-          Logout
-        </button>
-      </nav>
+     
 
       {/* Content */}
       <section className="mx-auto max-w-5xl px-6 py-10">

@@ -49,6 +49,8 @@ export default function NewTestPage() {
     description: "",
     category: "",
     subject: "",
+    exam: "",
+    type: "mock",
     topic: "",
     durationMinutes: "",
     marksPerQuestion: "1",
@@ -188,6 +190,46 @@ export default function NewTestPage() {
                 required
               />
             </div>
+
+          {/* exam  */}
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Exam
+              </label>
+              <select
+                value={form.exam}
+                onChange={(e) =>
+                  setForm({ ...form, exam: e.target.value })
+                }
+                required
+                className="w-full rounded-lg border p-2"
+              >
+                <option value="">Select Exam</option>
+                <option value="ssc-cgl">SSC CGL</option>
+                <option value="ssc-chsl">SSC CHSL</option>
+                <option value="ibps-po">IBPS PO</option>
+                <option value="rrb-ntpc">RRB NTPC</option>
+              </select>
+            </div>
+            {/* test type */}
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Test Type
+              </label>
+              <select
+                value={form.type}
+                onChange={(e) =>
+                  setForm({ ...form, type: e.target.value })
+                }
+                required
+                className="w-full rounded-lg border p-2"
+              >
+                <option value="mock">Mock Test</option>
+                <option value="pyq">Previous Year Paper (PYQ)</option>
+              </select>
+            </div>
+          
 
             {/* Subject */}
             <div className="space-y-2">

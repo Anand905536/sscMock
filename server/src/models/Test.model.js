@@ -21,6 +21,18 @@ const testSchema = new mongoose.Schema({
         required: true,
         trim: true,
     },
+        exam: {
+        type: String,
+        required: true,
+        trim: true,
+        lowercase: true,
+    },
+    type: {
+        type: String,
+        enum: ["mock", "pyq"],
+        required: true,
+        default: "mock",
+    },
     category: {
         type: String,
         required: true,
@@ -53,6 +65,7 @@ const testSchema = new mongoose.Schema({
         timestamps: true
     }
 )
+
 
 const Test = mongoose.model("Test", testSchema)
 export default Test;

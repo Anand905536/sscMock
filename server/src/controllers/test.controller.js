@@ -7,15 +7,8 @@ import Question from "../models/Question.model.js";
 export const createTest = async (req, res) => {
     try {
         const {
-            title,
-            description,
-            category,
-            subject,
-            topic,
-            durationMinutes,
-            marksPerQuestion,
-            negativeMarks,
-            status,
+            title, description, category, exam, type, subject, topic,
+            durationMinutes, marksPerQuestion, negativeMarks, status,
         } = req.body;
 
         if (
@@ -24,6 +17,7 @@ export const createTest = async (req, res) => {
             !subject ||
             !topic ||
             !durationMinutes ||
+            !exam ||
             marksPerQuestion === undefined ||
             negativeMarks === undefined
         ) {
@@ -59,6 +53,8 @@ export const createTest = async (req, res) => {
             category,
             subject,
             topic,
+            exam,
+            type,
             durationMinutes,
             marksPerQuestion,
             negativeMarks,
@@ -80,7 +76,7 @@ export const createTest = async (req, res) => {
 
 // get all tests
 export const getTests = async (req, res) => {
-    
+
     try {
         let query = Test.find();
 
@@ -98,6 +94,20 @@ export const getTests = async (req, res) => {
             query = query.find({
                 subject: req.query.subject,
             });
+        }
+
+        if (req.query.category) {
+            query = query.find({
+                category: new RegExp(`^${req.query.category}$`, "i")
+            });
+        }
+
+        if (req.query.exam) {
+            query = query.find({ exam: req.query.exam.toLowerCase() });
+        }
+
+        if (req.query.type) {
+            query = query.find({ type: req.query.type.toLowerCase() });
         }
 
         // Optional topic filter

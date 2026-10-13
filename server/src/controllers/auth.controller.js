@@ -66,7 +66,10 @@ export const login = async (req, res) => {
             })
         }
 
-        const user = await User.findOne({ email })
+        const user = await User.findOne({
+            email,
+            visibility: { $ne: false }
+        });
 
         if (!user) {
             return res.status(401).json({
@@ -175,6 +178,7 @@ export const googleCallback = async (req, res) => {
             name,
         } = data;
 
+
         if (!email) {
             return res.redirect(
                 `${process.env.USER_CLIENT_URL}/login?error=google_email_missing`
@@ -191,6 +195,13 @@ export const googleCallback = async (req, res) => {
             );
         }
 
+        if (user && user.visibility === false) {
+            return res.redirect(
+                `${process.env.USER_CLIENT_URL}/login?error=account_hidden`
+            );
+        }
+
+
         if (!user) {
             const randomPassword = crypto.randomBytes(32).toString("hex");
 
@@ -200,7 +211,7 @@ export const googleCallback = async (req, res) => {
             );
 
             user = await User.create({
-                name: name || "Google User",
+                name: name,
                 email: email.toLowerCase(),
                 password: hashedPassword,
                 role: "user",
@@ -219,6 +230,7 @@ export const googleCallback = async (req, res) => {
                 );
             }
         } else {
+            user.name = name;
             user.lastActiveAt = new Date();
             await user.save();
         }
@@ -242,6 +254,7 @@ export const googleCallback = async (req, res) => {
                 role: user.role,
             })
         );
+
 
         res.redirect(
             `${process.env.USER_CLIENT_URL}/auth/callback?token=${encodeURIComponent(
@@ -294,6 +307,13 @@ export const googleOneTapLogin = async (req, res) => {
             return res.status(403).json({
                 message:
                     "Google login is not available for admin accounts",
+            });
+        }
+
+        if (user && user.visibility === false) {
+            return res.status(403).json({
+                success: false,
+                message: "This account is hidden. Please contact support.",
             });
         }
 
