@@ -171,7 +171,7 @@ export default function ExploreExamPage() {
     if (!testId) return;
 
     if (test.isFullLength) {
-      router.push(`/full-length-exams/${testId}`);
+      router.push(`/full-length-exams/${test._id}/instructions`);
     } else {
       router.push(`/tests/${testId}`);
     }

@@ -29,6 +29,7 @@ export default function FullLengthExamResultPage() {
             }
 
             const parsed = JSON.parse(savedResult);
+            console.log("parsed", parsed)
             setResult(parsed);
         } catch {
             setError("Result load nahi ho saka.");
@@ -255,7 +256,22 @@ export default function FullLengthExamResultPage() {
 
             <footer className="flex flex-wrap gap-3">
                 <button
-                    onClick={() => router.push("/full-length-exams")}
+                    onClick={() => {
+                        const category = result?.category;
+                        const examSlug = result?.exam;
+
+                        if (category && examSlug) {
+                            router.push(
+                                `/tests/exam/${encodeURIComponent(
+                                    category.trim().toLowerCase()
+                                )}/${encodeURIComponent(
+                                    examSlug.trim().toLowerCase()
+                                )}`
+                            );
+                        } else {
+                            router.push("/full-length-exams");
+                        }
+                    }}
                     className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white"
                 >
                     Back to Exams
