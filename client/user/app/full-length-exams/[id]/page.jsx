@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
 
@@ -33,11 +33,135 @@ export default function FullLengthExamPage() {
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
 
-    
+
     const currentSection = exam?.sections?.[sectionIndex];
     const currentQuestion = currentSection?.questions?.[questionIndex];
 
-    
+
+    const writeQueueRef = useRef(Promise.resolve());
+
+    const enqueueWrite = useCallback((operation) => {
+        const pending = writeQueueRef.current.then(operation, operation);
+
+        // Keep the queue usable even if an individual request fails.
+        writeQueueRef.current = pending.catch(() => { });
+
+        return pending;
+    }, []);
+
+
+    const persistProgress = useCallback(
+        async (overrides = {}) => {
+            if (!attemptId) return null;
+
+            const token = localStorage.getItem("token");
+            const payload = {
+                sectionIndex,
+                questionIndex,
+                draftSelections: Object.entries(answers)
+                    .filter(([key, optionIndex]) => {
+                        if (!Number.isInteger(optionIndex) || optionIndex < 0) return false;
+
+                        const [s, q] = key.split("-").map(Number);
+                        const committedAnswer = savedAnswers[key];
+                        const options = exam?.sections?.[s]?.questions?.[q]?.options || [];
+                        const committedOptionIndex = committedAnswer
+                            ? options.indexOf(committedAnswer)
+                            : -1;
+
+                        // Only persist a draft when it differs from the committed answer.
+                        return optionIndex !== committedOptionIndex;
+                    })
+                    .map(([key, selectedOptionIndex]) => {
+                        const [s, q] = key.split("-").map(Number);
+                        return {
+                            sectionIndex: s,
+                            questionIndex: q,
+                            selectedOptionIndex,
+                        };
+                    }),
+                markedForReview: Object.keys(markedForReview).filter(
+                    (key) => markedForReview[key]
+                ),
+                visitedQuestions: Object.keys(visitedQuestions).filter(
+                    (key) => visitedQuestions[key]
+                ),
+                ...overrides,
+            };
+
+            const data = await enqueueWrite(async () => {
+                const response = await fetch(
+                    `${API}/attempts/${attemptId}/progress`,
+                    {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify(payload),
+                    }
+                );
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        result.message || "Unable to save exam progress."
+                    );
+                }
+
+                return result;
+            });
+
+            return data;
+        },
+        [
+            attemptId,
+            sectionIndex,
+            questionIndex,
+            answers,
+            savedAnswers,
+            exam,
+            markedForReview,
+            visitedQuestions,
+            enqueueWrite,
+        ]
+    );
+
+    // Persist an answer only when Save & Next is clicked (or cleared by Mark for Review).
+    const saveCommittedAnswer = useCallback(
+        async (s, q, selectedAnswer) => {
+            if (!attemptId) throw new Error("Attempt is not ready");
+
+            const token = localStorage.getItem("token");
+            const data = await enqueueWrite(async () => {
+                const response = await fetch(
+                    `${API}/attempts/${attemptId}/answers`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                            sectionIndex: s,
+                            questionIndex: q,
+                            selectedAnswer,
+                        }),
+                    }
+                );
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(
+                        result.message || "Unable to save answer."
+                    );
+                }
+                return result;
+            });
+            return data;
+        },
+        [attemptId,enqueueWrite]
+    );
 
     const submitExam = useCallback(async () => {
         if (!attemptId || submitting) return;
@@ -46,6 +170,7 @@ export default function FullLengthExamPage() {
         setError("");
 
         try {
+            await writeQueueRef.current;
             const token = localStorage.getItem("token");
             const formattedAnswers = Object.entries(savedAnswers).map(
                 ([key, selectedAnswer]) => {
@@ -93,12 +218,12 @@ export default function FullLengthExamPage() {
 
     useEffect(() => {
         const question = exam?.sections?.[sectionIndex]?.questions?.[questionIndex];
+        if (!question) return;
 
-        if (!question?._id) return;
-
+        const key = `${sectionIndex}-${questionIndex}`;
         setVisitedQuestions((previous) => ({
             ...previous,
-            [question._id]: true,
+            [key]: true,
         }));
     }, [exam, sectionIndex, questionIndex]);
 
@@ -190,18 +315,45 @@ export default function FullLengthExamPage() {
 
                 if (cancelled) return;
 
+                // Restore the existing attempt instead of resetting the exam on refresh.
+                const restoredSavedAnswers = {};
+                const restoredAnswers = {};
+
+                for (const item of startData.answers || []) {
+                    const key = `${item.sectionIndex}-${item.questionIndex}`;
+                    if (item.selectedAnswer) {
+                        restoredSavedAnswers[key] = item.selectedAnswer;
+                        const options = examObject.sections[item.sectionIndex]
+                            ?.questions?.[item.questionIndex]?.options || [];
+                        const optionIndex = options.indexOf(item.selectedAnswer);
+                        if (optionIndex >= 0) restoredAnswers[key] = optionIndex;
+                    }
+                }
+
+                // Restore uncommitted option selections separately.
+                for (const item of startData.draftSelections || []) {
+                    const key = `${item.sectionIndex}-${item.questionIndex}`;
+                    restoredAnswers[key] = item.selectedOptionIndex;
+                }
+
+                const restoredMarkedForReview = Object.fromEntries(
+                    (startData.markedForReview || []).map((key) => [key, true])
+                );
+                const restoredVisitedQuestions = Object.fromEntries(
+                    (startData.visitedQuestions || []).map((key) => [key, true])
+                );
+
                 setExam(examObject);
                 setAttemptId(startData.attemptId);
-                setSectionIndex(0);
-                setQuestionIndex(0);
-                setAnswers({});
-                setSavedAnswers({});
-                setSecondsLeft(
-                    Math.max(
-                        1,
-                        Number(examObject.sections[0].durationMinutes) || 1
-                    ) * 60
-                );
+                setSectionIndex(startData.currentSectionIndex ?? 0);
+                setQuestionIndex(startData.currentQuestionIndex ?? 0);
+                setAnswers(restoredAnswers);
+                setSavedAnswers(restoredSavedAnswers);
+                setMarkedForReview(restoredMarkedForReview);
+                setVisitedQuestions(restoredVisitedQuestions);
+                setSecondsLeft(Math.max(0, Number(startData.secondsLeft) || 0));
+                setIsPaused(Boolean(startData.paused));
+                setShowResumeModal(Boolean(startData.paused));
             } catch (err) {
                 if (!cancelled) {
                     setError(err.message || "Exam load nahi hua.");
@@ -261,7 +413,27 @@ export default function FullLengthExamPage() {
     //     submitExam,
     // ]);
 
-    // Update your timer useEffect to respect the pause state:
+    // Keep navigation and draft UI state persisted so refresh restores the same screen.
+    useEffect(() => {
+        if (!exam || !attemptId || loading || submitting) return;
+
+        persistProgress().catch((syncError) => {
+            console.error("Progress sync failed:", syncError);
+        });
+    }, [
+        exam,
+        attemptId,
+        loading,
+        submitting,
+        sectionIndex,
+        questionIndex,
+        answers,
+        markedForReview,
+        visitedQuestions,
+        persistProgress,
+    ]);
+
+    // The timer is section-specific. The backend deadline is the source of truth on refresh.
     useEffect(() => {
         if (!exam || !attemptId || submitting || isPaused) return;
         if (secondsLeft <= 0) {
@@ -480,9 +652,14 @@ export default function FullLengthExamPage() {
                     {/* Resume / Pause Test Modal Button */}
                     <button
                         type="button"
-                        onClick={() => {
-                            setIsPaused(true);
-                            setShowResumeModal(true);
+                        onClick={async () => {
+                            try {
+                                await persistProgress({ paused: true, secondsLeft });
+                                setIsPaused(true);
+                                setShowResumeModal(true);
+                            } catch (pauseError) {
+                                setError(pauseError.message || "Unable to pause the test.");
+                            }
                         }}
                         className="cursor-pointer border border-blue-300 rounded px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-xs font-semibold text-blue-700"
                     >
@@ -567,7 +744,14 @@ export default function FullLengthExamPage() {
 
                         <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
+                                try {
+                                    await saveCommittedAnswer(sectionIndex, questionIndex, "");
+                                } catch (saveError) {
+                                    setError(saveError.message || "Unable to update answer.");
+                                    return;
+                                }
+
                                 setMarkedForReview((prev) => {
                                     const nextMarkedState = { ...prev };
                                     if (nextMarkedState[answerKey]) {
@@ -577,7 +761,6 @@ export default function FullLengthExamPage() {
                                     }
                                     return nextMarkedState;
                                 });
-
                                 setAnswers((prev) => {
                                     const nextAnswers = { ...prev };
                                     delete nextAnswers[answerKey];
@@ -600,16 +783,27 @@ export default function FullLengthExamPage() {
 
                         <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
+                                const selectedIdx = answers[answerKey];
+                                const optionText =
+                                    selectedIdx !== undefined && selectedIdx !== null && selectedIdx !== ""
+                                        ? currentQuestion.options[selectedIdx]
+                                        : "";
+
+                                try {
+                                    await saveCommittedAnswer(sectionIndex, questionIndex, optionText);
+                                } catch (saveError) {
+                                    setError(saveError.message || "Unable to save answer.");
+                                    return;
+                                }
+
                                 setMarkedForReview((prev) => {
                                     const next = { ...prev };
                                     delete next[answerKey];
                                     return next;
                                 });
 
-                                const selectedIdx = answers[answerKey];
-                                if (selectedIdx !== undefined && selectedIdx !== "") {
-                                    const optionText = currentQuestion.options[selectedIdx];
+                                if (optionText) {
                                     setSavedAnswers((prev) => ({
                                         ...prev,
                                         [answerKey]: optionText,
@@ -622,7 +816,6 @@ export default function FullLengthExamPage() {
                                     });
                                 }
 
-                                // Check if user is on the last question of the section
                                 if (questionIndex < questions.length - 1) {
                                     setQuestionIndex((prev) => prev + 1);
                                 } else {
@@ -918,9 +1111,19 @@ export default function FullLengthExamPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => {
+                                onClick={async () => {
                                     const nextIndex = sectionIndex + 1;
                                     if (nextIndex < exam.sections.length) {
+                                        try {
+                                            await persistProgress({
+                                                sectionIndex: nextIndex,
+                                                questionIndex: 0,
+                                            });
+                                        } catch (progressError) {
+                                            setError(progressError.message || "Unable to save section progress.");
+                                            return;
+                                        }
+
                                         setShowSectionConfirmation(false);
                                         setSectionIndex(nextIndex);
                                         setQuestionIndex(0);
@@ -975,9 +1178,15 @@ export default function FullLengthExamPage() {
                         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setShowResumeModal(false);
-                                    setIsPaused(false); // Resumes the test timer
+                                onClick={async () => {
+                                    try {
+                                        const data = await persistProgress({ paused: false });
+                                        setSecondsLeft(Math.max(0, Number(data?.secondsLeft) || 0));
+                                        setShowResumeModal(false);
+                                        setIsPaused(false);
+                                    } catch (resumeError) {
+                                        setError(resumeError.message || "Unable to resume the test.");
+                                    }
                                 }}
                                 className="px-4 py-2 border border-gray-300 rounded text-sm font-semibold text-gray-700 hover:bg-gray-100 shadow-sm"
                             >
@@ -985,9 +1194,15 @@ export default function FullLengthExamPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setShowResumeModal(false);
-                                    setIsPaused(false); // Resumes test and removes modal
+                                onClick={async () => {
+                                    try {
+                                        const data = await persistProgress({ paused: false });
+                                        setSecondsLeft(Math.max(0, Number(data?.secondsLeft) || 0));
+                                        setShowResumeModal(false);
+                                        setIsPaused(false);
+                                    } catch (resumeError) {
+                                        setError(resumeError.message || "Unable to resume the test.");
+                                    }
                                 }}
                                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-semibold shadow"
                             >

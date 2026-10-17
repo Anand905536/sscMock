@@ -13,5 +13,4 @@ router.post('/:attemptId/submit', protect, submitAttempt)
 router.post("/start", protect, startAttempt)
 router.get("/my", protect, getMyAttempts)
 router.get("/:attemptId/result", protect, getAttemptResults)
-
 export default router;

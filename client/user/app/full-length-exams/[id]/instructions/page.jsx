@@ -37,11 +37,11 @@ export default function ExamInstructionsPage() {
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.message || "Exam load nahi hua.");
+                    throw new Error(data.message || "Exam doesn't load");
                 }
 
                 if (!Array.isArray(data.sections)) {
-                    throw new Error("Exam sections load nahi hue.");
+                    throw new Error("Exam sections doesn't load");
                 }
 
                 if (!cancelled) setExam(data);
