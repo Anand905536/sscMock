@@ -164,24 +164,59 @@ export const startFullLengthAttempt = async (req, res) => {
             status: "in-progress",
         }).sort({ startedAt: -1 });
 
+
         if (attempt) {
-            // Backfill timer fields for older attempts created before this update.
-            if (
-                !attempt.sectionDeadlineAt &&
-                !attempt.paused
-            ) {
+            // Backfill timer fields for older attempts without a deadline.
+            if (!attempt.sectionDeadlineAt && !attempt.paused) {
                 const section =
                     exam.sections[attempt.currentSectionIndex ?? 0];
 
                 if (section) {
-                    attempt.sectionDeadlineAt = new Date(
-                        Date.now() +
-                        Math.max(1, Number(section.durationMinutes) || 1) *
-                        60 *
-                        1000
-                    );
+                    const durationMs =
+                        Math.max(
+                            1,
+                            Number(section.durationMinutes) || 1
+                        ) * 60 * 1000;
 
-                    await attempt.save();
+                    const deadline = new Date(Date.now() + durationMs);
+
+                    // Update only the timer field, not the entire document.
+                    let updatedAttempt =
+                        await FullLengthAttempt.findOneAndUpdate(
+                            {
+                                _id: attempt._id,
+                                user: req.user.userId,
+                                status: "in-progress",
+                                sectionDeadlineAt: null,
+                                paused: { $ne: true },
+                            },
+                            {
+                                $set: {
+                                    sectionDeadlineAt: deadline,
+                                },
+                            },
+                            {
+                                returnDocument: "after",
+                                runValidators: true,
+                            }
+                        );
+
+                    // Another request may have initialized the timer first.
+                    if (!updatedAttempt) {
+                        updatedAttempt = await FullLengthAttempt.findOne({
+                            _id: attempt._id,
+                            user: req.user.userId,
+                            status: "in-progress",
+                        });
+                    }
+
+                    if (!updatedAttempt) {
+                        return res.status(404).json({
+                            message: "In-progress attempt not found",
+                        });
+                    }
+
+                    attempt = updatedAttempt;
                 }
             }
 
@@ -190,6 +225,7 @@ export const startFullLengthAttempt = async (req, res) => {
                 ...getResumeState(attempt),
             });
         }
+
 
         const firstSection = exam.sections[0];
 

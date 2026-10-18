@@ -55,31 +55,11 @@ export default function FullLengthExamPage() {
             if (!attemptId) return null;
 
             const token = localStorage.getItem("token");
+            // Only committed answers are saved by Save & Next.
+            // Current option selections remain local React state and disappear on refresh.
             const payload = {
                 sectionIndex,
                 questionIndex,
-                draftSelections: Object.entries(answers)
-                    .filter(([key, optionIndex]) => {
-                        if (!Number.isInteger(optionIndex) || optionIndex < 0) return false;
-
-                        const [s, q] = key.split("-").map(Number);
-                        const committedAnswer = savedAnswers[key];
-                        const options = exam?.sections?.[s]?.questions?.[q]?.options || [];
-                        const committedOptionIndex = committedAnswer
-                            ? options.indexOf(committedAnswer)
-                            : -1;
-
-                        // Only persist a draft when it differs from the committed answer.
-                        return optionIndex !== committedOptionIndex;
-                    })
-                    .map(([key, selectedOptionIndex]) => {
-                        const [s, q] = key.split("-").map(Number);
-                        return {
-                            sectionIndex: s,
-                            questionIndex: q,
-                            selectedOptionIndex,
-                        };
-                    }),
                 markedForReview: Object.keys(markedForReview).filter(
                     (key) => markedForReview[key]
                 ),
@@ -119,9 +99,6 @@ export default function FullLengthExamPage() {
             attemptId,
             sectionIndex,
             questionIndex,
-            answers,
-            savedAnswers,
-            exam,
             markedForReview,
             visitedQuestions,
             enqueueWrite,
@@ -163,26 +140,20 @@ export default function FullLengthExamPage() {
         [attemptId,enqueueWrite]
     );
 
+    const submitLockRef = useRef(false);
+
     const submitExam = useCallback(async () => {
-        if (!attemptId || submitting) return;
+        if (!attemptId || submitLockRef.current) return;
+        submitLockRef.current = true;
 
         setSubmitting(true);
         setError("");
 
         try {
+            // Wait for any in-flight answer save, then submit the attempt itself.
+            // The backend calculates the result from answers already committed via Save & Next.
             await writeQueueRef.current;
             const token = localStorage.getItem("token");
-            const formattedAnswers = Object.entries(savedAnswers).map(
-                ([key, selectedAnswer]) => {
-                    const [s, q] = key.split("-").map(Number);
-                    return {
-                        sectionIndex: s,
-                        questionIndex: q,
-                        selectedAnswer,
-                    };
-                }
-            );
-
             const response = await fetch(
                 `${API}/attempts/${attemptId}/submit`,
                 {
@@ -191,7 +162,7 @@ export default function FullLengthExamPage() {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${token}`,
                     },
-                    body: JSON.stringify({ answers: formattedAnswers }),
+                    body: JSON.stringify({}),
                 }
             );
 
@@ -211,9 +182,10 @@ export default function FullLengthExamPage() {
             router.push(`/full-length-exams/result/${attemptId}`);
         } catch (err) {
             setError(err.message || "Submit karne mein error aaya.");
+            submitLockRef.current = false;
             setSubmitting(false);
         }
-    }, [attemptId, savedAnswers, router, submitting, exam]);
+    }, [attemptId, router, exam]);
 
 
     useEffect(() => {
@@ -330,12 +302,6 @@ export default function FullLengthExamPage() {
                     }
                 }
 
-                // Restore uncommitted option selections separately.
-                for (const item of startData.draftSelections || []) {
-                    const key = `${item.sectionIndex}-${item.questionIndex}`;
-                    restoredAnswers[key] = item.selectedOptionIndex;
-                }
-
                 const restoredMarkedForReview = Object.fromEntries(
                     (startData.markedForReview || []).map((key) => [key, true])
                 );
@@ -413,7 +379,48 @@ export default function FullLengthExamPage() {
     //     submitExam,
     // ]);
 
-    // Keep navigation and draft UI state persisted so refresh restores the same screen.
+    // Freeze the server-side timer when the user refreshes or leaves the attempt page.
+    // The keepalive request can finish even while the document is unloading.
+    useEffect(() => {
+        if (!exam || !attemptId || loading || submitting || isPaused) return;
+
+        const pauseOnLeave = () => {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const payload = {
+                sectionIndex,
+                questionIndex,
+                paused: true,
+                secondsLeft,
+                markedForReview: Object.keys(markedForReview).filter((key) => markedForReview[key]),
+                visitedQuestions: Object.keys(visitedQuestions).filter((key) => visitedQuestions[key]),
+            };
+
+            fetch(`${API}/attempts/${attemptId}/progress`, {
+                method: "PATCH",
+                keepalive: true,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+            }).catch(() => {});
+        };
+
+        window.addEventListener("pagehide", pauseOnLeave);
+        window.addEventListener("beforeunload", pauseOnLeave);
+
+        return () => {
+            window.removeEventListener("pagehide", pauseOnLeave);
+            window.removeEventListener("beforeunload", pauseOnLeave);
+        };
+    }, [
+        exam, attemptId, loading, submitting, isPaused,
+        sectionIndex, questionIndex, secondsLeft, markedForReview, visitedQuestions
+    ]);
+
+    // Keep navigation, review flags and visited questions persisted; option picks are not persisted.
     useEffect(() => {
         if (!exam || !attemptId || loading || submitting) return;
 
@@ -427,7 +434,6 @@ export default function FullLengthExamPage() {
         submitting,
         sectionIndex,
         questionIndex,
-        answers,
         markedForReview,
         visitedQuestions,
         persistProgress,
@@ -558,8 +564,10 @@ export default function FullLengthExamPage() {
                         const isMarked = !!markedForReview[paletteAnswerKey];
 
                         let btnStyle = "cursor-pointer bg-blue-700 border-gray-300 text-white hover:bg-blue-800";
-                        if (isMarked) {
-                            btnStyle = "cursor-pointer bg-red-900 text-white border-yellow-500 font-bold";
+                        if (isMarked && isAnswered) {
+                            btnStyle = "cursor-pointer bg-yellow-400 text-gray-900 border-yellow-600 font-bold";
+                        } else if (isMarked) {
+                            btnStyle = "cursor-pointer bg-red-900 text-white border-red-500 font-bold";
                         } else if (isAnswered) {
                             btnStyle = "cursor-pointer bg-green-700 text-white border-blue-700";
                         }
@@ -573,6 +581,15 @@ export default function FullLengthExamPage() {
                                 key={question._id || qIndex}
                                 type="button"
                                 onClick={() => {
+                                    const committed = savedAnswers[paletteAnswerKey];
+                                    const optionList = currentSection?.questions?.[qIndex]?.options || [];
+                                    const committedIndex = optionList.indexOf(committed);
+                                    setAnswers((previous) => {
+                                        const next = { ...previous };
+                                        if (committedIndex >= 0) next[paletteAnswerKey] = committedIndex;
+                                        else delete next[paletteAnswerKey];
+                                        return next;
+                                    });
                                     setQuestionIndex(qIndex);
                                     setIsMobilePaletteOpen(false);
                                 }}
@@ -582,6 +599,14 @@ export default function FullLengthExamPage() {
                             </button>
                         );
                     })}
+                </div>
+
+                {/* Question palette color legend */}
+                <div className="mb-5 grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] text-gray-700">
+                    <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-blue-700" /> Unselected</div>
+                    <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-green-700" /> Saved</div>
+                    <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-red-900" /> Mark for Review</div>
+                    <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-yellow-400 border border-yellow-600" /> Mark for Review + Selected</div>
                 </div>
 
                 {/* Section Analysis Table */}
@@ -627,7 +652,7 @@ export default function FullLengthExamPage() {
 
     return (
         <div className="min-h-screen bg-white flex flex-col select-none text-sm pb-14 lg:pb-0">
-            {/* Top Bar matching Testbook UI */}
+            {/* Top Bar matching exam interface  */}
             <header className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
@@ -745,13 +770,6 @@ export default function FullLengthExamPage() {
                         <button
                             type="button"
                             onClick={async () => {
-                                try {
-                                    await saveCommittedAnswer(sectionIndex, questionIndex, "");
-                                } catch (saveError) {
-                                    setError(saveError.message || "Unable to update answer.");
-                                    return;
-                                }
-
                                 setMarkedForReview((prev) => {
                                     const nextMarkedState = { ...prev };
                                     if (nextMarkedState[answerKey]) {
@@ -760,17 +778,6 @@ export default function FullLengthExamPage() {
                                         nextMarkedState[answerKey] = true;
                                     }
                                     return nextMarkedState;
-                                });
-                                setAnswers((prev) => {
-                                    const nextAnswers = { ...prev };
-                                    delete nextAnswers[answerKey];
-                                    return nextAnswers;
-                                });
-
-                                setSavedAnswers((prev) => {
-                                    const nextSaved = { ...prev };
-                                    delete nextSaved[answerKey];
-                                    return nextSaved;
                                 });
                             }}
                             className={`cursor-pointer px-4 py-1.5 rounded text-xs shadow transition font-semibold ${isCurrentMarked
@@ -827,31 +834,22 @@ export default function FullLengthExamPage() {
                             Save & Next
                         </button>
 
-                        {sectionIndex < exam.sections.length - 1 ? (
-                            <button
-                                type="button"
-                                onClick={() => setShowSectionConfirmation(true)}
-                                className="cursor-pointer px-4 py-1.5 rounded text-xs bg-blue-700 text-white shadow"
-                            >
-                                Submit Section
-                            </button>
-                        ) : (
-                            <button
-                                type="button"
-                                disabled={submitting}
-                                onClick={() => setShowConfirmation(true)}
-                                className="cursor-pointer px-4 py-1.5 rounded text-xs bg-blue-700 text-white shadow disabled:opacity-50"
-                            >
-                                {submitting ? "Submitting..." : "Submit Test"}
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            disabled={sectionIndex >= (exam?.sections?.length ?? 0) - 1}
+                            onClick={() => setShowSectionConfirmation(true)}
+                            className="cursor-pointer px-4 py-1.5 rounded text-xs bg-blue-700 text-white shadow disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            Submit Section
+                        </button>
 
                         <button
                             type="button"
+                            disabled={submitting}
                             onClick={() => setShowConfirmation(true)}
-                            className="cursor-pointer px-5 py-1.5 bg-blue-700 text-white rounded text-xs hover:bg-blue-800 shadow"
+                            className="cursor-pointer px-5 py-1.5 bg-blue-700 text-white rounded text-xs hover:bg-blue-800 shadow disabled:opacity-50"
                         >
-                            Submit Test
+                            {submitting ? "Submitting..." : "Submit Test"}
                         </button>
                     </div>
                 </div>
@@ -1113,6 +1111,10 @@ export default function FullLengthExamPage() {
                                 type="button"
                                 onClick={async () => {
                                     const nextIndex = sectionIndex + 1;
+                                    if (nextIndex >= exam.sections.length) {
+                                        setShowSectionConfirmation(false);
+                                        return;
+                                    }
                                     if (nextIndex < exam.sections.length) {
                                         try {
                                             await persistProgress({
@@ -1137,7 +1139,7 @@ export default function FullLengthExamPage() {
                                 }}
                                 className="cursor-pointer px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-semibold shadow"
                             >
-                                Confirm & Continue
+                                {sectionIndex < exam.sections.length - 1 ? "Confirm & Continue" : "Confirm Section"}
                             </button>
                         </div>
                     </div>

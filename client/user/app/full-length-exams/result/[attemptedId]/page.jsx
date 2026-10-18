@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
+import { Award, BarChart2, CheckCircle2, ChevronRight, Clock, HelpCircle, ShieldCheck, Sparkles, XCircle, Home, ArrowLeft } from "lucide-react";
 
 const API_BASE = "http://localhost:5000/api/full-length-exams";
 
@@ -11,9 +11,9 @@ export default function FullLengthExamResultPage() {
     const params = useParams();
     const router = useRouter();
 
-    const routeAttemptId = Array.isArray(params.attemptId)
-        ? params.attemptId[0]
-        : params.attemptId;
+    const routeAttemptId = Array.isArray(params.attemptedId)
+        ? params.attemptedId[0]
+        : params.attemptedId;
 
     const [attempts, setAttempts] = useState([]);
     const [selectedAttemptId, setSelectedAttemptId] = useState(
@@ -71,18 +71,26 @@ export default function FullLengthExamResultPage() {
 
                 setAttempts(completedAttempts);
 
-                const requestedAttempt = completedAttempts.find(
-                    (item) =>
-                        String(item._id) === String(routeAttemptId)
-                );
 
-                const target = requestedAttempt || completedAttempts[0];
+                const requestedAttempt = routeAttemptId
+                    ? completedAttempts.find(
+                        (item) =>
+                            String(item._id) === String(routeAttemptId)
+                    )
+                    : null;
 
-                if (target) {
-                    setSelectedAttemptId(String(target._id));
+                if (requestedAttempt) {
+                    setSelectedAttemptId(String(requestedAttempt._id));
                 } else {
-                    setError("No completed exam attempts found.");
+                    setSelectedAttemptId("");
+                    setResult(null);
+                    setError(
+                        routeAttemptId
+                            ? "The requested attempt was not found in your completed attempts."
+                            : "No attempt ID was provided in the result URL."
+                    );
                 }
+
             } catch (err) {
                 if (!cancelled) {
                     setHistoryError(
@@ -194,22 +202,22 @@ export default function FullLengthExamResultPage() {
 
     if (historyLoading) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-gray-50">
-                <ThreeDots color="#4f46e5" height={80} width={80} />
+            <main className="flex min-h-screen items-center justify-center bg-slate-50">
+                <ThreeDots color="#059669" height={80} width={80} />
             </main>
         );
     }
 
     if (historyError) {
         return (
-            <main className="mx-auto max-w-2xl space-y-4 p-8">
-                <h1 className="text-2xl font-bold">
+            <main className="mx-auto max-w-xl space-y-4 p-8 pt-20 text-center">
+                <h1 className="text-2xl font-extrabold text-slate-800">
                     Could not load attempts
                 </h1>
-                <p className="text-red-600">{historyError}</p>
+                <p className="text-sm text-rose-600">{historyError}</p>
                 <button
                     onClick={() => router.push("/full-length-exams")}
-                    className="rounded-lg bg-indigo-600 px-5 py-3 text-white"
+                    className="mt-4 rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white shadow-sm hover:bg-emerald-700 transition"
                 >
                     Back to Exams
                 </button>
@@ -218,52 +226,54 @@ export default function FullLengthExamResultPage() {
     }
 
     return (
-        <main className="min-h-screen space-y-6 bg-gray-50 p-4 sm:p-8">
+        <main className="min-h-screen space-y-6 bg-slate-50/60 p-4 sm:p-8 pb-16">
             <div className="mx-auto max-w-5xl space-y-6">
-                <header className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow">
-                    <p className="text-xs font-bold uppercase tracking-wider text-indigo-100">
-                        Full-Length Mock Test
-                    </p>
 
-                    <h1 className="mt-2 text-3xl font-extrabold">
-                        Exam Performance Result
-                    </h1>
+                {/* Header Banner */}
+                <header className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 p-6 text-white shadow-lg sm:p-8">
+                    <div className="absolute right-0 top-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
 
-                    <p className="mt-2 text-indigo-100">
-                        View your score, answers, explanations, and
-                        performance compared with other candidates.
-                    </p>
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                        <div className="space-y-2">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/30 px-3.5 py-1 text-xs font-semibold tracking-wider uppercase text-emerald-200 border border-emerald-400/30">
+                                <Sparkles className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" /> Full-Length Mock Test
+                            </span>
+                            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                                Exam Performance Result
+                            </h1>
+                            <p className="text-emerald-100/90 text-sm">
+                                View your score, answers, explanations, and performance compared with other candidates.
+                            </p>
+                            {result && (
+                                <p className="pt-2 text-xs font-bold text-emerald-200 tracking-wide uppercase">
+                                    {result.examTitle} &bull; {result.category}
+                                </p>
+                            )}
+                        </div>
 
-                    {result && (
-                        <p className="mt-3 text-sm text-indigo-100">
-                            {result.examTitle} · {result.category}
-                        </p>
-                    )}
-
-                    <button
-                        type="button"
-                        disabled={!result || resultLoading || !selectedAttemptId}
-                        onClick={() => {
-                            router.push(
-                                `/full-length-exams/result/${selectedAttemptId}/analysis`
-                            );
-                        }}
-                        className="cursor-pointer mt-4 rounded-lg bg-white px-5 py-3
-               font-bold text-indigo-700 shadow
-               hover:bg-indigo-50 disabled:cursor-not-allowed
-               disabled:opacity-50"
-                    >
-                        View Detailed Analysis →
-                    </button>
+                        <button
+                            type="button"
+                            disabled={!result || resultLoading || !selectedAttemptId}
+                            onClick={() => {
+                                router.push(
+                                    `/full-length-exams/result/${selectedAttemptId}/analysis`
+                                );
+                            }}
+                            className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-bold text-emerald-800 shadow-md hover:bg-emerald-50 transition disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
+                        >
+                            <span>View Detailed Analysis</span>
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </header>
 
-                {/* Attempt dropdown */}
-                <section className="rounded-2xl border bg-white p-5 shadow-sm">
+                {/* Attempt Dropdown Selector */}
+                <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2">
                     <label
                         htmlFor="attempt-history"
-                        className="cursor-pointer mb-2 block font-bold text-gray-800"
+                        className="cursor-pointer block text-xs font-bold uppercase tracking-wider text-slate-500"
                     >
-                        Previous attempts ({examAttempts.length})
+                        Previous Attempts ({examAttempts.length})
                     </label>
 
                     <select
@@ -272,7 +282,7 @@ export default function FullLengthExamResultPage() {
                         onChange={(event) =>
                             setSelectedAttemptId(event.target.value)
                         }
-                        className="cursor-pointer w-full rounded-xl border border-gray-300 bg-gray-50 p-3.5 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        className="cursor-pointer w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3.5 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 transition"
                     >
                         {examAttempts.map((item, index) => (
                             <option key={item._id} value={item._id}>
@@ -291,14 +301,14 @@ export default function FullLengthExamResultPage() {
                 </section>
 
                 {resultLoading && (
-                    <div className="flex justify-center rounded-xl border bg-white p-8">
-                        <ThreeDots color="#4f46e5" height={60} width={60} />
+                    <div className="flex justify-center rounded-2xl border border-slate-200 bg-white p-12">
+                        <ThreeDots color="#059669" height={60} width={60} />
                     </div>
                 )}
 
                 {error && !resultLoading && (
-                    <section className="rounded-xl border border-red-200 bg-white p-5">
-                        <p className="font-semibold text-red-600">
+                    <section className="rounded-2xl border border-rose-200 bg-rose-50/50 p-5 shadow-sm">
+                        <p className="text-sm font-semibold text-rose-700">
                             {error}
                         </p>
                     </section>
@@ -306,7 +316,7 @@ export default function FullLengthExamResultPage() {
 
                 {result && !resultLoading && !error && (
                     <>
-                        {/* Overall metrics */}
+                        {/* Overall Metrics Grid */}
                         <section className="grid grid-cols-2 gap-4 md:grid-cols-3">
                             <StatCard
                                 label="Score"
@@ -346,13 +356,13 @@ export default function FullLengthExamResultPage() {
                             <StatCard
                                 label="Correct"
                                 value={result.correctAnswers}
-                                color="text-green-600"
+                                color="text-emerald-600"
                                 className="cursor-pointer"
                             />
                             <StatCard
                                 label="Wrong"
                                 value={result.wrongAnswers}
-                                color="text-red-600"
+                                color="text-rose-600"
                                 className="cursor-pointer"
                             />
                             <StatCard
@@ -362,19 +372,20 @@ export default function FullLengthExamResultPage() {
                             />
                         </section>
 
-                        <section className="rounded-2xl border bg-white p-5 shadow-sm">
+                        {/* Percentage Bar Card */}
+                        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-3">
                             <div className="flex items-center justify-between gap-3">
-                                <h2 className="font-bold text-gray-800">
-                                    Percentage
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700">
+                                    Overall Percentage Breakdown
                                 </h2>
-                                <span className="text-xl font-extrabold text-indigo-600">
+                                <span className="text-2xl font-extrabold text-emerald-600">
                                     {result.percentage}%
                                 </span>
                             </div>
 
-                            <div className="mt-3 h-3 overflow-hidden rounded-full bg-gray-100">
+                            <div className="h-3.5 overflow-hidden rounded-full bg-slate-100">
                                 <div
-                                    className="h-full rounded-full bg-indigo-600 transition-all"
+                                    className="h-full rounded-full bg-emerald-600 transition-all duration-500"
                                     style={{
                                         width: `${Math.min(
                                             100,
@@ -383,31 +394,24 @@ export default function FullLengthExamResultPage() {
                                     }}
                                 />
                             </div>
-
-                            <p className="mt-3 text-sm text-gray-500">
+                            <p className="text-xs text-slate-500 font-medium">
                                 Percentile is compared against{" "}
-                                {result.percentileComparedCandidates} other
+                                <strong className="text-slate-700">{result.percentileComparedCandidates}</strong> other
                                 candidates for this exam.
                             </p>
                         </section>
-
-
-
-
-
                     </>
                 )}
 
-                <footer className="flex flex-wrap gap-3">
-
-
+                {/* Footer Navigation */}
+                <footer className="flex flex-wrap gap-4 pt-2">
                     <button
                         onClick={() => {
                             const exam = selectedHistoryAttempt?.exam;
 
                             const category = exam?.category;
                             const examSlug = exam?.exam;
-
+                            console.log("category", "examSlug")
                             if (category && examSlug) {
                                 router.push(
                                     `/tests/exam/${encodeURIComponent(
@@ -420,17 +424,16 @@ export default function FullLengthExamResultPage() {
                                 router.push("/full-length-exams");
                             }
                         }}
-                        className="cursor-pointer rounded-xl bg-indigo-600 px-6 py-3.5 font-bold text-white shadow-md transition hover:bg-indigo-700"
+                        className="cursor-pointer inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3.5 font-bold text-white shadow-md transition hover:bg-emerald-700"
                     >
-                        Back to Exams
+                        <ArrowLeft className="w-4 h-4" /> Back to Exams
                     </button>
-
 
                     <button
                         onClick={() => router.push("/")}
-                        className="cursor-pointer rounded-xl border bg-white px-6 py-3 font-bold text-gray-700"
+                        className="cursor-pointer inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 py-3.5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition"
                     >
-                        Home
+                        <Home className="w-4 h-4" /> Home
                     </button>
                 </footer>
             </div>
@@ -441,19 +444,18 @@ export default function FullLengthExamResultPage() {
 function StatCard({
     label,
     value,
-    color = "text-gray-900",
+    color = "text-slate-900",
     highlight = false,
     className = "",
-
 }) {
     return (
         <div
-            className={`rounded-2xl border p-5 shadow-md ${highlight
-                ? "border-indigo-200 bg-indigo-50"
-                : "border-gray-100 bg-white"
+            className={`rounded-2xl border p-5 shadow-sm transition ${highlight
+                ? "border-emerald-200 bg-emerald-50/50"
+                : "border-slate-200/80 bg-white"
                 } ${className}`}
         >
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 {label}
             </p>
             <p className={`mt-2 break-words text-2xl font-extrabold ${color}`}>

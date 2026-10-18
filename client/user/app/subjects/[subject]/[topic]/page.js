@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock } from "lucide-react";
+import { LayoutGrid, Clock, Play, HelpCircle, Award } from "lucide-react";
 import { ThreeDots } from "react-loader-spinner";
 
 const topicMap = {
@@ -113,94 +113,110 @@ export default function TopicTestsPage() {
       : "English";
 
   return (
-    <main className="min-h-screen bg-white">
-     
-
+    <main className="min-h-screen bg-slate-50/60 pb-16">
       {/* Content */}
-      <section className="mx-auto max-w-5xl px-6 py-10">
+      <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <button
-          onClick={() => router.back()}
-          className="hover:cursor-pointer mb-6 flex items-center text-sm font-medium text-gray-600 hover:text-black"
+          onClick={() => router.push("/")}
+          className="hover:cursor-pointer mb-6 inline-flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm hover:border-emerald-300 hover:text-emerald-700 transition"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          <LayoutGrid className="h-4 w-4" />
+          Back to Dashboard
         </button>
 
-        <div className="mb-8">
-          {/* <p className="text-sm font-medium text-gray-500">
+        <div className="mb-8 rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
+          <span className="inline-block rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-700 border border-emerald-200/60">
             {subjectTitle}
-          </p> */}
+          </span>
 
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-600">
-            {topicName || "Topic"}
+          <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            {topicName || "Topic"} Tests
           </h1>
 
-          <p className="mt-2 text-gray-500">
-            Choose a test and start practicing.
+          <p className="mt-1 text-sm text-slate-500">
+            Choose a practice test below and start testing your knowledge.
           </p>
         </div>
 
         {loading && (
-          <ThreeDots
-            height="50"
-            width="50"
-            radius="5"
-            color="#4fa94d"
-            ariaLabel="three-dots-loading"
-            wrapperStyle={{ margin: '20px' }}
-            wrapperClass="custom-loader"
-            visible={true}
-          />
+          <div className="flex justify-center py-12">
+            <ThreeDots
+              height="50"
+              width="50"
+              radius="5"
+              color="#059669"
+              ariaLabel="three-dots-loading"
+              wrapperStyle={{ margin: '20px auto' }}
+              wrapperClass="custom-loader"
+              visible={true}
+            />
+          </div>
         )}
 
         {error && (
-          <p className="text-sm text-red-600">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-4 text-sm text-rose-700">
             {error}
-          </p>
+          </div>
         )}
 
         {!loading && !error && tests.length === 0 && (
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-8 text-center">
-            <h2 className="text-lg font-semibold text-black">
+          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+            <h2 className="text-base font-bold text-slate-800">
               No tests available
             </h2>
 
-            <p className="mt-2 text-sm text-gray-500">
-              Tests for this topic will appear here once they
-              are published.
+            <p className="mt-1 text-xs text-slate-500">
+              Tests for this topic will appear here once they are published.
             </p>
           </div>
         )}
 
         {!loading && !error && tests.length > 0 && (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 ">
+          <div className="space-y-3">
             {tests.map((test) => (
               <div
                 key={test._id}
-                className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg"
+                className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm transition-all duration-200 hover:border-emerald-300 hover:shadow-md"
               >
-                <h2 className="text-lg font-semibold text-black">
-                  {test.title}
-                </h2>
+                {/* Left side details */}
+                <div className="min-w-0 flex-1 space-y-1">
+                  <h2 className="text-base font-bold text-slate-900 group-hover:text-emerald-700 transition-colors truncate">
+                    {test.title}
+                  </h2>
 
-                {test.description && (
-                  <p className="mt-2 line-clamp-2 text-sm text-gray-500">
-                    {test.description}
-                  </p>
-                )}
+                  {test.description && (
+                    <p className="line-clamp-1 text-xs text-slate-500">
+                      {test.description}
+                    </p>
+                  )}
 
-                <div className="mt-5 flex items-center gap-2 text-sm text-gray-500">
-                  <Clock className="h-4 w-4" />
-                  {test.durationMinutes} minutes
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-slate-500 pt-0.5">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 text-slate-400" />
+                      {test.durationMinutes} minutes
+                    </span>
+                    {test.totalQuestions && (
+                      <>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
+                          {test.totalQuestions} Questions
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
 
-                <Link
-                  href={`/tests/${test._id}`}
-                  className="bg-gray-600 mt-5 block rounded-md px-4 py-2.5 text-center 
-                  text-sm font-medium text-white hover:bg-gray-500"
-                >
-                  Start Test
-                </Link>
+                {/* Right side start button */}
+                <div className="shrink-0 self-end sm:self-center">
+                  <Link
+                    href={`/tests/${test._id}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 hover:shadow-emerald-900/10 transition-all"
+                  >
+                    <Play className="h-3.5 w-3.5 fill-white" />
+                    Start Test
+                  </Link>
+                </div>
               </div>
             ))}
           </div>

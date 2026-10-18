@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
+import { Clock, HelpCircle, Layers, Award, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
 
 const API = "http://localhost:5000/api/full-length-exams";
 
@@ -16,6 +16,7 @@ export default function ExamInstructionsPage() {
     const [accepted, setAccepted] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [hasInProgressAttempt, setHasInProgressAttempt] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -37,11 +38,26 @@ export default function ExamInstructionsPage() {
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.message || "Exam doesn't load");
+                    throw new Error(data.message || "Failed to load exam details.");
                 }
 
                 if (!Array.isArray(data.sections)) {
-                    throw new Error("Exam sections doesn't load");
+                    throw new Error("Exam sections could not be loaded.");
+                }
+
+                // If an attempt is already in progress, the user should resume it rather than
+                // being led through a fresh-start flow.
+                const attemptsResponse = await fetch(`${API}/previous`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: "no-store",
+                });
+                if (attemptsResponse.ok) {
+                    const attemptsData = await attemptsResponse.json();
+                    const activeAttempt = (attemptsData.attempts || []).find((item) => {
+                        const attemptExamId = item.exam?._id || item.exam;
+                        return String(attemptExamId) === String(data._id) && item.status === "in-progress";
+                    });
+                    if (!cancelled) setHasInProgressAttempt(Boolean(activeAttempt));
                 }
 
                 if (!cancelled) setExam(data);
@@ -60,13 +76,18 @@ export default function ExamInstructionsPage() {
     }, [examId, router]);
 
     if (loading) {
-        return <main className="p-8 flex justify-center"><div><ThreeDots/></div></main>;
+        return (
+            <main className="flex min-h-screen items-center justify-center bg-slate-50">
+                <ThreeDots color="#059669" height={80} width={80} />
+            </main>
+        );
     }
 
     if (error || !exam) {
         return (
-            <main className="mx-auto max-w-3xl p-6">
-                <p className="text-red-600">{error || "Exam nahi mila."}</p>
+            <main className="mx-auto max-w-2xl p-6 pt-16 text-center">
+                <h1 className="text-2xl font-bold text-slate-800">Exam Unavailable</h1>
+                <p className="mt-2 text-rose-600">{error || "Could not retrieve exam information."}</p>
                 <button
                     onClick={() => {
                         if (exam?.category && exam?.exam) {
@@ -75,9 +96,9 @@ export default function ExamInstructionsPage() {
                             router.push("/tests");
                         }
                     }}
-                    className="mt-4 rounded-lg border px-4 py-2"
+                    className="mt-6 rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white shadow-sm hover:bg-emerald-700 transition"
                 >
-                    Go Back
+                    Back to Exams
                 </button>
             </main>
         );
@@ -102,52 +123,57 @@ export default function ExamInstructionsPage() {
     );
 
     return (
-        <main className="min-h-screen bg-gray-50 px-4 py-8">
+        <main className="min-h-screen bg-slate-50/60 px-4 py-10 sm:px-8">
             <div className="mx-auto max-w-3xl space-y-6">
-                <header className="rounded-2xl bg-indigo-700 p-6 text-white sm:p-8">
-                    <p className="text-sm font-semibold uppercase tracking-wider text-indigo-200">
+                
+                {/* Header Banner */}
+                <header className="rounded-3xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 p-6 text-white shadow-md sm:p-8">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/30 px-3.5 py-1 text-xs font-semibold tracking-wider uppercase text-emerald-200 border border-emerald-400/30">
                         {exam.category} • {exam.exam}
-                    </p>
-                    <h1 className="mt-2 text-3xl font-bold">{exam.title}</h1>
-                    <p className="mt-2 text-indigo-100">
-                        Test shuru karne se pehle instructions dhyan se padhein.
+                    </span>
+                    <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight">{exam.title}</h1>
+                    <p className="mt-2 text-emerald-100/90 text-sm">
+                        Please read the instructions carefully before commencing your exam test session.
                     </p>
                 </header>
 
-                <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <InfoCard label="Total Questions" value={totalQuestions} />
-                    <InfoCard label="Total Duration" value={`${totalMinutes} min`} />
-                    <InfoCard label="Total Sections" value={exam.sections.length} />
-                    <InfoCard label="Maximum Marks" value={totalMarks} />
+                {/* Info Cards Grid */}
+                <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <InfoCard label="Total Questions" value={totalQuestions} icon={<HelpCircle className="w-4 h-4 text-emerald-600" />} />
+                    <InfoCard label="Duration" value={`${totalMinutes} Mins`} icon={<Clock className="w-4 h-4 text-emerald-600" />} />
+                    <InfoCard label="Total Sections" value={exam.sections.length} icon={<Layers className="w-4 h-4 text-emerald-600" />} />
+                    <InfoCard label="Maximum Marks" value={totalMarks} icon={<Award className="w-4 h-4 text-emerald-600" />} />
                 </section>
 
-                <section className="space-y-4 rounded-2xl border bg-white p-5 sm:p-7">
-                    <h2 className="text-xl font-bold">Exam Instructions</h2>
+                {/* Instructions & Marking Scheme Card */}
+                <section className="space-y-6 rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
+                    <div>
+                        <h2 className="text-lg font-extrabold text-slate-900">General Instructions</h2>
+                        <ol className="mt-3 list-decimal space-y-2.5 pl-5 text-sm text-slate-600 leading-relaxed">
+                            <li>The section timer starts when you first begin the test. If an attempt is already in progress, use Resume Test to continue from its saved time.</li>
+                            <li>Each section has its own allocated time limit and question structure.</li>
+                            <li>You can navigate between questions and sections within their respective limits.</li>
+                            <li>Select one correct option for each question before proceeding or saving.</li>
+                            <li>Negative marking applies as per the specific section marking scheme.</li>
+                            <li>Review your attempted summaries before finalizing your test submission.</li>
+                            <li>Once submitted, answers cannot be modified under any circumstances.</li>
+                        </ol>
+                    </div>
 
-                    <ol className="list-decimal space-y-3 pl-5 text-gray-700">
-                        <li>Test start karne ke baad timer chalna shuru ho jayega.</li>
-                        <li>Har section ka apna time limit hai.</li>
-                        <li>Section ka time khatam hone par agle section par jaana pad sakta hai.</li>
-                        <li>Har question ke liye ek option select kar sakte hain.</li>
-                        <li>Negative marking section ke marking scheme ke according hogi.</li>
-                        <li>Submit karne se pehle answers ka summary aur attempted questions check kar sakte hain.</li>
-                        <li>Final submission ke baad answers change nahi kar sakte.</li>
-                    </ol>
+                    <div className="border-t border-slate-100 pt-6">
+                        <h3 className="text-base font-bold text-slate-900">Section-wise Marking Scheme</h3>
 
-                    <div className="border-t pt-5">
-                        <h3 className="font-semibold">Section-wise marking scheme</h3>
-
-                        <div className="mt-3 space-y-2">
+                        <div className="mt-3 space-y-2.5">
                             {exam.sections.map((section, index) => (
                                 <div
                                     key={section._id || index}
-                                    className="flex flex-wrap justify-between gap-2 rounded-lg bg-gray-50 p-3 text-sm"
+                                    className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200/60 bg-slate-50/50 p-4 text-xs sm:text-sm"
                                 >
-                                    <span className="font-medium">{section.name}</span>
-                                    <span className="text-gray-600">
-                                        {section.durationMinutes} min · +
-                                        {section.marksPerQuestion} correct · -
-                                        {section.negativeMarks} incorrect
+                                    <span className="font-bold text-slate-800">{section.name}</span>
+                                    <span className="font-medium text-slate-500">
+                                        {section.durationMinutes} Mins &nbsp;|&nbsp; 
+                                        <span className="text-emerald-600 font-bold ml-1">+{section.marksPerQuestion}</span> Correct &nbsp;|&nbsp; 
+                                        <span className="text-rose-600 font-bold">-{section.negativeMarks}</span> Incorrect
                                     </span>
                                 </div>
                             ))}
@@ -155,26 +181,28 @@ export default function ExamInstructionsPage() {
                     </div>
                 </section>
 
-                <section className="rounded-2xl border bg-white p-5 sm:p-7">
-                    <h2 className="text-xl font-bold">Terms and Conditions</h2>
+                {/* Terms & Conditions Acceptance Card */}
+                <section className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-7 shadow-sm">
+                    <div className="flex items-center gap-2 text-slate-900 font-bold text-base mb-3">
+                        <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                        <h2>Declaration</h2>
+                    </div>
 
-                    <label className="mt-4 flex cursor-pointer items-start gap-3">
+                    <label className="flex cursor-pointer items-start gap-3.5">
                         <input
                             type="checkbox"
                             checked={accepted}
                             onChange={(event) => setAccepted(event.target.checked)}
-                            className="mt-1 h-5 w-5 accent-indigo-600"
+                            className="mt-1 h-5 w-5 rounded border-slate-300 accent-emerald-600 cursor-pointer"
                         />
-                        <span className="text-sm leading-6 text-gray-700">
-                            Main confirm karta/karti hoon ki maine exam instructions
-                            padh li hain aur main test ke rules, timer, marking scheme
-                            aur final submission conditions ko samajhta/samajhti hoon.
-                            Main test shuru karne ke liye sahmat hoon.
+                        <span className="text-xs sm:text-sm leading-relaxed text-slate-600 font-medium">
+                            I confirm that I have carefully read and understood all the exam instructions, timer rules, section structures, and marking schemes. I agree to abide by the testing guidelines and terms of submission.
                         </span>
                     </label>
                 </section>
 
-                <footer className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+                {/* Footer Navigation Buttons */}
+                <footer className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between pt-2">
                     <button
                         type="button"
                         onClick={() => {
@@ -184,9 +212,9 @@ export default function ExamInstructionsPage() {
                                 router.push("/tests");
                             }
                         }}
-                        className="rounded-lg border bg-white px-5 py-3 font-semibold"
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 py-3.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition"
                     >
-                        Back to Exams
+                        <ArrowLeft className="w-4 h-4" /> Back to Exams
                     </button>
 
                     <button
@@ -195,9 +223,10 @@ export default function ExamInstructionsPage() {
                         onClick={() =>
                             router.push(`/full-length-exams/${exam._id}`)
                         }
-                        className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-7 py-3.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 hover:shadow-emerald-900/10 transition disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                        Accept & Start Test
+                        <span>{hasInProgressAttempt ? "Resume Test" : "Accept & Start Test"}</span>
+                        <ArrowRight className="w-4 h-4" />
                     </button>
                 </footer>
             </div>
@@ -205,11 +234,14 @@ export default function ExamInstructionsPage() {
     );
 }
 
-function InfoCard({ label, value }) {
+function InfoCard({ label, value, icon }) {
     return (
-        <div className="rounded-xl border bg-white p-4">
-            <p className="text-sm text-gray-500">{label}</p>
-            <p className="mt-1 text-xl font-bold">{value}</p>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-1">
+            <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                {icon}
+            </div>
+            <p className="text-xl font-extrabold text-slate-900">{value}</p>
         </div>
     );
 }

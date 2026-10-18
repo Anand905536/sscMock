@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -9,6 +8,7 @@ import {
   BookOpen,
   ArrowRight,
   GraduationCap,
+  Sparkles,
 } from "lucide-react";
 
 const examCategories = {
@@ -96,19 +96,19 @@ export default function ExamCategoryPage() {
 
   if (!data) {
     return (
-      <main className="min-h-screen bg-white px-4 py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-bold text-gray-900">
+      <main className="min-h-screen bg-slate-50 px-4 py-20 flex items-center justify-center">
+        <div className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-extrabold text-slate-900">
             Exam category not found
           </h1>
-          <p className="mt-3 text-gray-600">
-            Please select an exam category from the Tests menu.
+          <p className="mt-2 text-sm text-slate-500">
+            Please select an exam category from the navigation menu.
           </p>
           <Link
             href="/"
-            className="mt-6 inline-flex rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700"
+            className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 transition"
           >
-            Back to Home
+            Back to Dashboard
           </Link>
         </div>
       </main>
@@ -116,60 +116,46 @@ export default function ExamCategoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Page heading */}
-      {/* <section className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-700 sm:h-14 sm:w-14">
-              <GraduationCap className="h-7 w-7" />
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold text-green-700">
-                {data.description}
-              </p>
-              <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-                {data.title}
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
-                {data.subtitle}
-              </p>
-            </div>
-          </div> */}
-
-          {/* Search */}
-          {/* <div className="mt-8 max-w-xl">
-            <label
-              htmlFor="exam-search"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
-              Find your exam
-            </label>
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <input
-                id="exam-search"
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search exams or subjects..."
-                className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-gray-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              />
-            </div>
-          </div>
-        </div>
-      </section> */}
-
-      {/* Exam cards */}
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
-            Explore exams
-          </h2>
-          <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-            {filteredExams.length} exams
+    <main className="min-h-screen bg-slate-50/60 pb-16">
+      
+      {/* Category Hero Header */}
+      <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 py-10 px-4 sm:px-8 text-white shadow-md">
+        <div className="mx-auto max-w-7xl space-y-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/30 px-3.5 py-1 text-xs font-semibold tracking-wider uppercase text-emerald-200 border border-emerald-400/30">
+            <Sparkles className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" /> {data.description}
           </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            {data.title}
+          </h1>
+          <p className="max-w-2xl text-emerald-100/90 text-sm sm:text-base leading-relaxed">
+            {data.subtitle}
+          </p>
+        </div>
+      </div>
+
+      {/* Main Content & Search */}
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-slate-900">
+              Explore Exams
+            </h2>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200/60">
+              {filteredExams.length} available
+            </span>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search exams or subjects..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs font-medium text-slate-800 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition"
+            />
+          </div>
         </div>
 
         {filteredExams.length > 0 ? (
@@ -177,42 +163,39 @@ export default function ExamCategoryPage() {
             {filteredExams.map((exam) => (
               <article
                 key={exam.name}
-                className="group flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-md transition duration-200 hover:-translate-y-1 hover:border-green-200 hover:shadow-md sm:p-6"
+                className="group flex h-full flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md"
               >
-                {/* <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-700">
-                    <BookOpen className="h-5 w-5" />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-lg bg-emerald-50 p-2.5 text-emerald-600">
+                      <GraduationCap className="w-5 h-5" />
+                    </span>
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">
+                      Official Syllabus
+                    </span>
                   </div>
-                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                    Exam
-                  </span>
-                </div> */}
 
-                <h3 className="mt-5 text-lg font-bold text-gray-900">
-                  {exam.name}
-                </h3>
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-700 transition-colors pt-2">
+                    {exam.name}
+                  </h3>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  {exam.fullName}
-                </p>
-
-                {/* <div className="mt-5 border-t border-gray-100 pt-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Main subjects
+                  <p className="text-xs font-medium text-slate-500">
+                    {exam.fullName}
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-gray-700">
-                    {exam.subjects}
-                  </p>
-                </div> */}
 
-                <div className="mt-auto pt-6">
+                  <p className="text-xs text-slate-400 line-clamp-2 pt-2 border-t border-slate-100">
+                    <strong className="text-slate-600">Subjects:</strong> {exam.subjects}
+                  </p>
+                </div>
+
+                <div className="pt-6">
                   <Link
                     href={`/tests/exam/${category}/${encodeURIComponent(
                       exam.name.toLowerCase().replaceAll(" ", "-")
                     )}`}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-700"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 hover:shadow-emerald-900/10"
                   >
-                    Explore exam
+                    <span>Explore Exam Series</span>
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -220,13 +203,13 @@ export default function ExamCategoryPage() {
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-5 py-14 text-center">
-            <Search className="mx-auto h-8 w-8 text-gray-400" />
-            <h3 className="mt-4 font-semibold text-gray-900">
+          <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-14 text-center shadow-sm">
+            <Search className="mx-auto h-8 w-8 text-slate-400" />
+            <h3 className="mt-4 font-bold text-slate-800">
               No exams found
             </h3>
-            <p className="mt-2 text-sm text-gray-500">
-              Try another exam name or subject.
+            <p className="mt-1 text-xs text-slate-500">
+              Try searching with another exam name or subject keyword.
             </p>
           </div>
         )}
