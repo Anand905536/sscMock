@@ -33,11 +33,10 @@ export default function FullLengthExamPage() {
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
 
-
     const currentSection = exam?.sections?.[sectionIndex];
     const currentQuestion = currentSection?.questions?.[questionIndex];
 
-
+        const startAttemptPromiseRef=useRef(null)
     const writeQueueRef = useRef(Promise.resolve());
 
     const enqueueWrite = useCallback((operation) => {
@@ -105,7 +104,6 @@ export default function FullLengthExamPage() {
         ]
     );
 
-    // Persist an answer only when Save & Next is clicked (or cleared by Mark for Review).
     const saveCommittedAnswer = useCallback(
         async (s, q, selectedAnswer) => {
             if (!attemptId) throw new Error("Attempt is not ready");
@@ -143,6 +141,7 @@ export default function FullLengthExamPage() {
     const submitLockRef = useRef(false);
 
     const submitExam = useCallback(async () => {
+
         if (!attemptId || submitLockRef.current) return;
         submitLockRef.current = true;
 
@@ -150,10 +149,11 @@ export default function FullLengthExamPage() {
         setError("");
 
         try {
-            // Wait for any in-flight answer save, then submit the attempt itself.
-            // The backend calculates the result from answers already committed via Save & Next.
+            // 1. Force clear any pending writes/saves before submitting
             await writeQueueRef.current;
+            
             const token = localStorage.getItem("token");
+
             const response = await fetch(
                 `${API}/attempts/${attemptId}/submit`,
                 {
@@ -167,9 +167,14 @@ export default function FullLengthExamPage() {
             );
 
             const data = await response.json();
+
+            console.log("data after submission",data)
             if (!response.ok) {
-                throw new Error(data.message || "Exam submit nahi hua.");
+                throw new Error(data.message || "Exam submitted");
             }
+
+            // 2. Clear out local navigation state to avoid stale session cache
+            localStorage.removeItem(`exam_timer_${attemptId}`);
 
             sessionStorage.setItem(
                 "fullLengthExamResult",
@@ -179,14 +184,15 @@ export default function FullLengthExamPage() {
                     exam: exam.exam,
                 })
             );
-            router.push(`/full-length-exams/result/${attemptId}`);
+            
+            // 3. Use replace instead of push so the user cannot back-button into a submitted attempt
+            router.replace(`/full-length-exams/result/${attemptId}`);
         } catch (err) {
-            setError(err.message || "Submit karne mein error aaya.");
+            setError(err.message || "Error in submission");
             submitLockRef.current = false;
             setSubmitting(false);
         }
     }, [attemptId, router, exam]);
-
 
     useEffect(() => {
         const question = exam?.sections?.[sectionIndex]?.questions?.[questionIndex];
@@ -199,188 +205,186 @@ export default function FullLengthExamPage() {
         }));
     }, [exam, sectionIndex, questionIndex]);
 
+  
+useEffect(() => {
+    let cancelled = false;
 
-    useEffect(() => {
-        let cancelled = false;
+    async function loadExam() {
+        try {
+            setLoading(true);
+            setError("");
 
-        async function loadExam() {
-            try {
-                setLoading(true);
-                setError("");
+            const token = localStorage.getItem("token");
 
-                const token = localStorage.getItem("token");
+            if (!token) {
+                router.push("/login");
+                return;
+            }
 
-                if (!token) {
-                    router.push("/login");
-                    return;
-                }
+            if (!examId || examId === "ssc-cgl") {
+                throw new Error("ExamId is unavailable");
+            }
 
-                if (!examId || examId === "ssc-cgl") {
-                    throw new Error(
-                        "Exam URL mein MongoDB exam ID nahi mili. Start Exam link check karo."
-                    );
-                }
+            // 1. Load exam details
+            const examResponse = await fetch(`${API}/${examId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                cache: "no-store",
+            });
 
-                const examResponse = await fetch(`${API}/${examId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                    cache: "no-store",
-                });
-
-                const examData = await examResponse.json();
-
-                if (!examResponse.ok) {
-                    throw new Error(
-                        examData.message || "unable to load"
-                    );
-                }
-
-                const examObject = examData;
-
-                if (
-                    !examObject ||
-                    typeof examObject !== "object" ||
-                    !Array.isArray(examObject.sections) ||
-                    examObject.sections.length === 0
-                ) {
-                    throw new Error(
-                        "API response mein sections nahi mile. Response: " +
-                        JSON.stringify(examData)
-                    );
-                }
-
-                const hasQuestions = examObject.sections.some(
-                    (section) =>
-                        Array.isArray(section.questions) &&
-                        section.questions.length > 0
+            const examData = await examResponse.json();
+            console.log("data",examData)
+            if (!examResponse.ok) {
+                throw new Error(
+                    examData.message || "Unable to load exam"
                 );
+            }
 
-                if (!hasQuestions) {
-                    throw new Error(
-                        "Is exam ke sections mein questions add nahi hain."
+            const examObject = examData;
+
+            if (
+                !examObject ||
+                typeof examObject !== "object" ||
+                !Array.isArray(examObject.sections) ||
+                examObject.sections.length === 0
+            ) {
+                throw new Error("Exam sections are not available");
+            }
+
+            const hasQuestions = examObject.sections.some(
+                (section) =>
+                    Array.isArray(section.questions) &&
+                    section.questions.length > 0
+            );
+
+            if (!hasQuestions) {
+                throw new Error(
+                    "Is exam ke sections mein questions add nahi hain."
+                );
+            }
+
+            // 2. Start the attempt only once per in-flight request
+            if (!startAttemptPromiseRef.current) {
+                const startRequest = (async () => {
+                    const response = await fetch(
+                        `${API}/attempts/start`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({ examId }),
+                        }
                     );
-                }
 
-                const startResponse = await fetch(`${API}/attempts/start`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ examId }),
-                });
+                    const data = await response.json();
 
-                const startData = await startResponse.json();
+                    if (!response.ok) {
+                        throw new Error(
+                            data.message || "Exam start nahi hua."
+                        );
+                    }
 
-                if (!startResponse.ok) {
-                    throw new Error(
-                        startData.message || "Exam start nahi hua."
-                    );
-                }
+                    if (!data.attemptId) {
+                        throw new Error(
+                            "Attempt ID nahi mili. Backend response check karo."
+                        );
+                    }
 
-                if (!startData.attemptId) {
-                    throw new Error(
-                        "Attempt ID nahi mili. Backend start API ka response check karo."
-                    );
-                }
+                    return data;
+                })();
 
-                if (cancelled) return;
+                startAttemptPromiseRef.current = startRequest;
+            }
 
-                // Restore the existing attempt instead of resetting the exam on refresh.
-                const restoredSavedAnswers = {};
-                const restoredAnswers = {};
+            let startData;
 
-                for (const item of startData.answers || []) {
-                    const key = `${item.sectionIndex}-${item.questionIndex}`;
-                    if (item.selectedAnswer) {
-                        restoredSavedAnswers[key] = item.selectedAnswer;
-                        const options = examObject.sections[item.sectionIndex]
+            try {
+                startData = await startAttemptPromiseRef.current;
+            } catch (err) {
+                startAttemptPromiseRef.current = null;
+                throw err;
+            }
+
+            // Don't update state if this effect has been cleaned up
+            if (cancelled) return;
+
+            // 3. Restore saved answers
+            const restoredSavedAnswers = {};
+            const restoredAnswers = {};
+
+            for (const item of startData.answers || []) {
+                const key = `${item.sectionIndex}-${item.questionIndex}`;
+
+                if (item.selectedAnswer) {
+                    restoredSavedAnswers[key] = item.selectedAnswer;
+
+                    const options =
+                        examObject.sections[item.sectionIndex]
                             ?.questions?.[item.questionIndex]?.options || [];
-                        const optionIndex = options.indexOf(item.selectedAnswer);
-                        if (optionIndex >= 0) restoredAnswers[key] = optionIndex;
+
+                    const optionIndex = options.indexOf(
+                        item.selectedAnswer
+                    );
+
+                    if (optionIndex >= 0) {
+                        restoredAnswers[key] = optionIndex;
                     }
                 }
+            }
 
-                const restoredMarkedForReview = Object.fromEntries(
-                    (startData.markedForReview || []).map((key) => [key, true])
-                );
-                const restoredVisitedQuestions = Object.fromEntries(
-                    (startData.visitedQuestions || []).map((key) => [key, true])
-                );
+            const restoredMarkedForReview = Object.fromEntries(
+                (startData.markedForReview || []).map(
+                    (key) => [key, true]
+                )
+            );
 
-                setExam(examObject);
-                setAttemptId(startData.attemptId);
-                setSectionIndex(startData.currentSectionIndex ?? 0);
-                setQuestionIndex(startData.currentQuestionIndex ?? 0);
-                setAnswers(restoredAnswers);
-                setSavedAnswers(restoredSavedAnswers);
-                setMarkedForReview(restoredMarkedForReview);
-                setVisitedQuestions(restoredVisitedQuestions);
-                setSecondsLeft(Math.max(0, Number(startData.secondsLeft) || 0));
-                setIsPaused(Boolean(startData.paused));
-                setShowResumeModal(Boolean(startData.paused));
-            } catch (err) {
-                if (!cancelled) {
-                    setError(err.message || "Exam load nahi hua.");
-                }
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
+            const restoredVisitedQuestions = Object.fromEntries(
+                (startData.visitedQuestions || []).map(
+                    (key) => [key, true]
+                )
+            );
+
+            // 4. Update exam state
+            setExam(examObject);
+            setAttemptId(startData.attemptId);
+            setSectionIndex(startData.currentSectionIndex ?? 0);
+            setQuestionIndex(startData.currentQuestionIndex ?? 0);
+            setAnswers(restoredAnswers);
+            setSavedAnswers(restoredSavedAnswers);
+            setMarkedForReview(restoredMarkedForReview);
+            setVisitedQuestions(restoredVisitedQuestions);
+            setSecondsLeft(
+                Math.max(0, Number(startData.secondsLeft) || 0)
+            );
+            setIsPaused(Boolean(startData.paused));
+            setShowResumeModal(Boolean(startData.paused));
+
+        } catch (err) {
+            if (!cancelled) {
+                setError(err.message || "Exam didn't load");
+            }
+        } finally {
+            if (!cancelled) {
+                setLoading(false);
             }
         }
+    }
 
-        if (examId) {
-            loadExam();
-        } else {
-            setError("URL se exam ID nahi mili.");
-            setLoading(false);
-        }
+    if (examId) {
+        loadExam();
+    } else {
+        setError("ExamId is unavailable");
+        setLoading(false);
+    }
 
-        return () => {
-            cancelled = true;
-        };
-    }, [examId, router]);
+    return () => {
+        cancelled = true;
+    };
+}, [examId, router]);
 
-    // useEffect(() => {
-    //     if (!exam || !attemptId || submitting) return;
-
-    //     if (secondsLeft <= 0) {
-    //         if (sectionIndex < exam.sections.length - 1) {
-    //             const nextIndex = sectionIndex + 1;
-
-    //             setSectionIndex(nextIndex);
-    //             setQuestionIndex(0);
-    //             setSecondsLeft(
-    //                 Math.max(
-    //                     1,
-    //                     Number(exam.sections[nextIndex].durationMinutes) || 1
-    //                 ) * 60
-    //             );
-    //         } else {
-    //             submitExam();
-    //         }
-
-    //         return;
-    //     }
-
-    //     const timer = setTimeout(() => {
-    //         setSecondsLeft((previous) => previous - 1);
-    //     }, 1000);
-
-    //     return () => clearTimeout(timer);
-    // }, [
-    //     secondsLeft,
-    //     exam,
-    //     attemptId,
-    //     sectionIndex,
-    //     submitting,
-    //     submitExam,
-    // ]);
-
-    // Freeze the server-side timer when the user refreshes or leaves the attempt page.
-    // The keepalive request can finish even while the document is unloading.
     useEffect(() => {
         if (!exam || !attemptId || loading || submitting || isPaused) return;
 
@@ -420,7 +424,6 @@ export default function FullLengthExamPage() {
         sectionIndex, questionIndex, secondsLeft, markedForReview, visitedQuestions
     ]);
 
-    // Keep navigation, review flags and visited questions persisted; option picks are not persisted.
     useEffect(() => {
         if (!exam || !attemptId || loading || submitting) return;
 
@@ -439,7 +442,6 @@ export default function FullLengthExamPage() {
         persistProgress,
     ]);
 
-    // The timer is section-specific. The backend deadline is the source of truth on refresh.
     useEffect(() => {
         if (!exam || !attemptId || submitting || isPaused) return;
         if (secondsLeft <= 0) {
@@ -504,7 +506,6 @@ export default function FullLengthExamPage() {
     const isCurrentMarked = !!markedForReview[answerKey];
     const questions = currentSection.questions;
 
-
     const sectionSummary = exam.sections.map((section, sIndex) => {
         const totalQ = section.questions.length;
         const attemptedQ = section.questions.reduce((count, _, qIndex) => {
@@ -537,6 +538,7 @@ export default function FullLengthExamPage() {
 
     const notAnsweredQuestionsCount = questions.length - answeredQuestionsCount;
     const markedCount = questions.filter((_, qIndex) => !!markedForReview[`${sectionIndex}-${qIndex}`]).length;
+
 
     // Reusable Palette & Sidebar Content
     const PaletteSidebarContent = () => (
@@ -585,10 +587,10 @@ export default function FullLengthExamPage() {
                                     const optionList = currentSection?.questions?.[qIndex]?.options || [];
                                     const committedIndex = optionList.indexOf(committed);
                                     setAnswers((previous) => {
-                                        const next = { ...previous };
-                                        if (committedIndex >= 0) next[paletteAnswerKey] = committedIndex;
-                                        else delete next[paletteAnswerKey];
-                                        return next;
+                                        // If this question has a committed answer, restore it.
+                                        // Otherwise preserve any unsaved local selection while navigating.
+                                        if (committedIndex < 0) return previous;
+                                        return { ...previous, [paletteAnswerKey]: committedIndex };
                                     });
                                     setQuestionIndex(qIndex);
                                     setIsMobilePaletteOpen(false);
@@ -601,13 +603,6 @@ export default function FullLengthExamPage() {
                     })}
                 </div>
 
-                {/* Question palette color legend */}
-                <div className="mb-5 grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] text-gray-700">
-                    <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-blue-700" /> Unselected</div>
-                    <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-green-700" /> Saved</div>
-                    <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-red-900" /> Mark for Review</div>
-                    <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-yellow-400 border border-yellow-600" /> Mark for Review + Selected</div>
-                </div>
 
                 {/* Section Analysis Table */}
                 <div className="border border-gray-300 rounded overflow-hidden">
@@ -618,15 +613,19 @@ export default function FullLengthExamPage() {
                         <tbody>
                             <tr className="border-b border-gray-200">
                                 <td className="p-1.5 pl-2 text-gray-700">Answered</td>
-                                <td className="p-1.5 pr-2 text-right font-bold bg-green-700 text-white">{answeredQuestionsCount}</td>
+                                <td className="p-1.5 pr-2 text-right font-bold bg-green-700 text-white"></td>
                             </tr>
                             <tr className="border-b border-gray-200">
                                 <td className="p-1.5 pl-2 text-gray-700">Not Answered</td>
-                                <td className="p-1.5 pr-2 text-right font-bold bg-blue-700 text-white">{notAnsweredQuestionsCount}</td>
+                                <td className="p-1.5 pr-2 text-right font-bold bg-blue-700 text-white"></td>
                             </tr>
                             <tr className="border-b border-gray-200">
                                 <td className="p-1.5 pl-2 text-gray-700">Mark for Review</td>
-                                <td className="p-1.5 pr-2 text-right font-bold bg-red-800 text-white">{markedCount}</td>
+                                <td className="p-1.5 pr-2 text-right font-bold bg-red-800 text-white"></td>
+                            </tr>
+                            <tr className="border-b border-gray-200">
+                                <td className="p-1.5 pl-2 text-gray-700">Mark for Review + answered</td>
+                                <td className="p-1.5 pr-2 text-right font-bold bg-yellow-400 text-white"></td>
                             </tr>
                         </tbody>
                     </table>
@@ -804,11 +803,9 @@ export default function FullLengthExamPage() {
                                     return;
                                 }
 
-                                setMarkedForReview((prev) => {
-                                    const next = { ...prev };
-                                    delete next[answerKey];
-                                    return next;
-                                });
+                                // Keep the review flag when saving/navigating. The palette
+                                // will show yellow for saved + review, and red for review
+                                // without a committed answer.
 
                                 if (optionText) {
                                     setSavedAnswers((prev) => ({
@@ -919,12 +916,8 @@ export default function FullLengthExamPage() {
                                     >
                                         <div
                                             onClick={() => {
-                                                setMarkedForReview((prev) => {
-                                                    const next = { ...prev };
-                                                    delete next[answerKey];
-                                                    return next;
-                                                });
-
+                                                // Choosing an option does not clear Mark for Review.
+                                                // Until Save & Next commits it, the palette stays red.
                                                 setAnswers((previous) => ({
                                                     ...previous,
                                                     [answerKey]: isSelected ? undefined : index,

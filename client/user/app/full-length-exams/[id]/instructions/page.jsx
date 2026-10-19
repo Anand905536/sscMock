@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
 import { Clock, HelpCircle, Layers, Award, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
@@ -17,6 +17,7 @@ export default function ExamInstructionsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [hasInProgressAttempt, setHasInProgressAttempt] = useState(false);
+    
 
     useEffect(() => {
         let cancelled = false;
@@ -125,7 +126,7 @@ export default function ExamInstructionsPage() {
     return (
         <main className="min-h-screen bg-slate-50/60 px-4 py-10 sm:px-8">
             <div className="mx-auto max-w-3xl space-y-6">
-                
+
                 {/* Header Banner */}
                 <header className="rounded-3xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 p-6 text-white shadow-md sm:p-8">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/30 px-3.5 py-1 text-xs font-semibold tracking-wider uppercase text-emerald-200 border border-emerald-400/30">
@@ -171,8 +172,8 @@ export default function ExamInstructionsPage() {
                                 >
                                     <span className="font-bold text-slate-800">{section.name}</span>
                                     <span className="font-medium text-slate-500">
-                                        {section.durationMinutes} Mins &nbsp;|&nbsp; 
-                                        <span className="text-emerald-600 font-bold ml-1">+{section.marksPerQuestion}</span> Correct &nbsp;|&nbsp; 
+                                        {section.durationMinutes} Mins &nbsp;|&nbsp;
+                                        <span className="text-emerald-600 font-bold ml-1">+{section.marksPerQuestion}</span> Correct &nbsp;|&nbsp;
                                         <span className="text-rose-600 font-bold">-{section.negativeMarks}</span> Incorrect
                                     </span>
                                 </div>

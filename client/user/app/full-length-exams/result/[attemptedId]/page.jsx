@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
-import { Award, BarChart2, CheckCircle2, ChevronRight, Clock, HelpCircle, ShieldCheck, Sparkles, XCircle, Home, ArrowLeft } from "lucide-react";
+import {  ChevronRight,  Sparkles, Home, ArrowLeft } from "lucide-react";
 
 const API_BASE = "http://localhost:5000/api/full-length-exams";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState,useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Clock, HelpCircle, Award, CheckCircle2, RotateCcw, Play, BookOpen, Layers } from "lucide-react";
 
@@ -18,6 +18,8 @@ export default function ExploreExamPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [inProgressByExamId, setInProgressByExamId] = useState({});
+  const startLockRef = useRef(false);
+    const [starting, setStarting] = useState(false);
 
   const examName = examSlug
     .split("-")
@@ -70,14 +72,14 @@ export default function ExploreExamPage() {
         if (!sectionalResponse.ok) {
           throw new Error(
             sectionalData.message ||
-              "Failed to fetch sectional tests"
+            "Failed to fetch sectional tests"
           );
         }
 
         if (!fullLengthResponse.ok) {
           throw new Error(
             fullLengthData.message ||
-              "Failed to fetch full-length exams"
+            "Failed to fetch full-length exams"
           );
         }
 
@@ -141,7 +143,7 @@ export default function ExploreExamPage() {
               (sum, section) =>
                 sum +
                 (section.questions || []).length *
-                  Number(section.marksPerQuestion || 0),
+                Number(section.marksPerQuestion || 0),
               0
             ),
           };
@@ -212,7 +214,7 @@ export default function ExploreExamPage() {
   return (
     <main className="min-h-screen bg-slate-50/60 px-4 py-8 sm:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
-        
+
         {/* Exam Title & Header Banner */}
         <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-700 border border-emerald-200/60">
@@ -232,22 +234,20 @@ export default function ExploreExamPage() {
         <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 pb-3">
           <button
             onClick={() => setActiveTab("mock")}
-            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all ${
-              activeTab === "mock"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-            }`}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "mock"
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
+              }`}
           >
             <BookOpen className="w-4 h-4" /> Mock Tests ({mockTests.length})
           </button>
 
           <button
             onClick={() => setActiveTab("pyq")}
-            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all ${
-              activeTab === "pyq"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-            }`}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "pyq"
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
+              }`}
           >
             <Award className="w-4 h-4" /> Previous Year Papers ({pyqTests.length})
           </button>
@@ -284,8 +284,8 @@ export default function ExploreExamPage() {
 
               const totalMarks = Number(
                 test.totalMarks ??
-                  test.totalMarksPossible ??
-                  0
+                test.totalMarksPossible ??
+                0
               );
 
               const questions =
@@ -310,9 +310,9 @@ export default function ExploreExamPage() {
               const percentage =
                 hasAttempted && totalMarks > 0
                   ? Math.min(
-                      Math.max((score / totalMarks) * 100, 0),
-                      100
-                    )
+                    Math.max((score / totalMarks) * 100, 0),
+                    100
+                  )
                   : 0;
 
               return (
@@ -354,11 +354,10 @@ export default function ExploreExamPage() {
                           Score: {score}/{totalMarks || "—"}
                         </span>
                         <span
-                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                            passed
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                              : "bg-rose-50 text-rose-700 border border-rose-200/60"
-                          }`}
+                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${passed
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                            : "bg-rose-50 text-rose-700 border border-rose-200/60"
+                            }`}
                         >
                           <CheckCircle2 className="w-3 h-3" /> {passed ? "PASSED" : "FAILED"} ({Math.round(percentage)}%)
                         </span>
@@ -377,13 +376,12 @@ export default function ExploreExamPage() {
                     <button
                       onClick={() => handleStartTest(test)}
                       disabled={!testId}
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-bold transition-all shadow-sm ${
-                        test.isFullLength && test.inProgressAttempt
-                          ? "bg-amber-500 text-white hover:bg-amber-600"
-                          : hasAttempted
-                            ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400"
-                            : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-emerald-900/10"
-                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-bold transition-all shadow-sm ${test.isFullLength && test.inProgressAttempt
+                        ? "bg-amber-500 text-white hover:bg-amber-600"
+                        : hasAttempted
+                          ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+                          : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-emerald-900/10"
+                        } disabled:cursor-not-allowed disabled:opacity-50`}
                     >
                       {test.isFullLength && test.inProgressAttempt ? (
                         <>

@@ -269,18 +269,16 @@ export const submitFullLengthAttempt = async (req, res) => {
         });
 
         if (!attempt) return res.status(404).json({ message: "Attempt not found" });
+        
+        // If it's already completed, return success immediately with the existing score
         if (attempt.status === "completed") {
-            return res.status(400).json({ message: "Attempt already submitted" });
+            return res.status(200).json({ message: "Attempt already submitted", score: attempt.score });
         }
 
         const exam = await FullLengthExam.findById(attempt.exam);
         if (!exam) return res.status(404).json({ message: "Exam not found" });
 
-        const answers = attempt.answers.map((answer) => ({
-            sectionIndex: answer.sectionIndex,
-            questionIndex: answer.questionIndex,
-            selectedAnswer: answer.selectedAnswer || "",
-        }));
+        const answers = attempt.answers || [];
 
         let score = 0;
         const seen = new Set();
@@ -289,21 +287,13 @@ export const submitFullLengthAttempt = async (req, res) => {
             const section = exam.sections[answer.sectionIndex];
             const question = section?.questions[answer.questionIndex];
 
-            if (!question) {
-                return res.status(400).json({ message: "Invalid question reference" });
-            }
+            if (!question) continue;
 
             const key = `${answer.sectionIndex}:${answer.questionIndex}`;
-            if (seen.has(key)) {
-                return res.status(400).json({ message: "Duplicate answer" });
-            }
+            if (seen.has(key)) continue;
             seen.add(key);
 
             const selected = answer.selectedAnswer || "";
-            if (selected && !question.options.includes(selected)) {
-                return res.status(400).json({ message: "Invalid answer option" });
-            }
-
             if (selected === question.correctAnswer) {
                 score += section.marksPerQuestion;
             } else if (selected) {
@@ -311,15 +301,17 @@ export const submitFullLengthAttempt = async (req, res) => {
             }
         }
 
-        attempt.answers = answers;
+        // Force status update and clear active progress flags
         attempt.score = score;
         attempt.status = "completed";
+        attempt.paused = false;
         attempt.completedAt = new Date();
         await attempt.save();
 
-        res.json({
-            message: "Exam submitted",
+        return res.status(200).json({
+            message: "Exam submitted successfully",
             score,
+            attempt_status:attempt.status,
             sectionResults: exam.sections.map((section, sectionIndex) => {
                 let correct = 0;
                 let incorrect = 0;
@@ -329,8 +321,8 @@ export const submitFullLengthAttempt = async (req, res) => {
                 section.questions.forEach((question, questionIndex) => {
                     const answer = answers.find(
                         (item) =>
-                            item.sectionIndex === sectionIndex &&
-                            item.questionIndex === questionIndex
+                            Number(item.sectionIndex) === sectionIndex &&
+                            Number(item.questionIndex) === questionIndex
                     );
                     const selected = answer?.selectedAnswer || "";
 
@@ -355,7 +347,8 @@ export const submitFullLengthAttempt = async (req, res) => {
             }),
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error("Submit attempt error:", error);
+        return res.status(500).json({ message: error.message });
     }
 };
 
