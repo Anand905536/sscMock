@@ -12,6 +12,7 @@ import { protect } from "./middleware/auth.middleware.js";
 import userRoutes from "./routes/user.routes.js";
 import profileRoutes from './routes/profile.routes.js'
 import fullLengthExamRoutes from "./routes/fullLengthExam.routes.js";
+import pdfs from './routes/pdf.routes.js'
 
 
 const app = express();
@@ -37,6 +38,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/full-length-exams", fullLengthExamRoutes);
+app.use("/api/pdfs",pdfs)
 
 
 app.get("/api/auth/me", protect, (req, res) => {
@@ -45,8 +47,6 @@ app.get("/api/auth/me", protect, (req, res) => {
         user: req.user
     })
 })
-
-
 
 
 // running PORT

@@ -79,10 +79,10 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50/50 to-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-12">
-        
+
         {/* Thin Glowing Special Test Bar Link */}
-        <Link 
-          href="/tests/exam/ssc/ssc-cgl-memory-based" 
+        <Link
+          href="/tests/category/ssc"
           className="group relative flex items-center justify-between overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 px-5 py-3 text-white shadow-md transition-all duration-300 hover:border-emerald-400 hover:shadow-emerald-900/20 hover:shadow-lg"
         >
           {/* Subtle Glowing Pulse Background Effect */}

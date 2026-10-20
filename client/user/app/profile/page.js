@@ -186,7 +186,7 @@ export default function ProfilePage() {
         e.preventDefault();
 
         const confirmed = window.confirm(
-            "Are you sure you want to delete your account? This will hide your account."
+            "Are you sure you want to delete your account? This will delete you account permanently"
         );
 
         if (!confirmed) return;
@@ -196,7 +196,7 @@ export default function ProfilePage() {
             const userId = userData.id;
             const token = localStorage.getItem("token");
 
-            console.log("userId from profile delete paeg ", userId, token)
+            // console.log("userId from profile delete paeg ", userId, token)
             if (!userId || !token) {
                 alert("Please log in again.");
                 router.push("/login");
@@ -269,41 +269,7 @@ export default function ProfilePage() {
                 <form onSubmit={handleProfileUpdate} className="space-y-6">
 
                     {/* Avatar Upload Section */}
-                    <div className="flex flex-col sm:flex-row items-center gap-6 rounded-2xl bg-gradient-to-r from-indigo-50/50 to-purple-50/50 p-6 border border-indigo-100">
-                        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-full border-4 border-white shadow-md bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center">
-                            {previewUrl ? (
-                                <img src={previewUrl} alt="Avatar Preview" className="h-full w-full object-cover" />
-                            ) : (
-                                <span className="text-2xl font-bold text-white">
-                                    {user.name ? user.name.charAt(0).toUpperCase() : "U"}
-                                </span>
-                            )}
-                        </div>
 
-                        <div className="flex-1 text-center sm:text-left">
-                            <h3 className="text-base font-bold text-gray-800">Profile Picture</h3>
-                            <p className="text-xs text-gray-500 mt-0.5 mb-3">Upload a fresh PNG, JPG or WEBP avatar image.</p>
-
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleImageChange}
-                                accept="image/*"
-                                className="hidden"
-                            />
-
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current.click()}
-                                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-200 hover:bg-indigo-700 transition"
-                            >
-                                <span>📁 Choose Image</span>
-                            </button>
-                            {selectedFile && (
-                                <p className="text-xs text-emerald-600 font-medium mt-2">Selected: {selectedFile.name}</p>
-                            )}
-                        </div>
-                    </div>
 
                     <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Full Name</label>
@@ -378,31 +344,39 @@ export default function ProfilePage() {
                         />
                     </div>
 
+
+
                     <button
                         type="submit"
                         disabled={savingPassword}
-                        className="w-full rounded-xl border-2 border-indigo-600 bg-white py-3 text-sm font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition shadow-sm disabled:opacity-50"
+                        className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:opacity-95 transition disabled:opacity-50"
                     >
                         {savingPassword ? "Updating Password..." : "Update Password"}
                     </button>
 
 
+                </form>
 
+                {/* for deleting account */}
+                <form onSubmit={handleDelete}>
+                    <button
+                        type="submit"
+                        disabled={deleteAccount}
+                        className=" mt-5 cursor-pointer w-full rounded-xl bg-gradient-to-r from-red-600 to-red-600 py-3 
+                text-sm font-bold text-white shadow-lg shadow-red-200 hover:opacity-95 transition disabled:opacity-50"
+                    >
+                        {deleteAccount ? "Deleting..." : "Delete Account "}
+                    </button>
                 </form>
 
             </div>
-            {/* for deleting account */}
-            <form onSubmit={handleDelete}>
-                <button
-                    type="submit"
-                    disabled={deleteAccount}
-                    className=" cursor-pointer w-full rounded-xl bg-gradient-to-r from-red-600 to-red-600 py-3 
-                text-sm font-bold text-white shadow-lg shadow-red-200 hover:opacity-95 transition disabled:opacity-50"
-                >
-                    {deleteAccount ? "Deleting..." : "Delete Account "}
-                </button>
-            </form>
+
 
         </main>
     );
 }
+
+
+
+
+

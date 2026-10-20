@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -13,7 +12,6 @@ import {
 } from "lucide-react";
 
 const testLinks = [
-  // { label: "All Mock Tests", href: "/tests" },
   { label: "SSC Exams", href: "/tests/category/ssc" },
   { label: "Banking Exams", href: "/tests/category/banking" },
   { label: "Railway Exams", href: "/tests/category/railway" },
@@ -71,8 +69,8 @@ export default function Navbar() {
   };
 
   const homeActive = isMounted && pathname === "/";
-  const testsActive =
-    isMounted && pathname.startsWith("/tests");
+  const pdfActive = isMounted && pathname.startsWith("/various-pdf");
+  const testsActive = isMounted && pathname.startsWith("/tests");
 
   return (
     <nav className="relative z-50 border-b border-gray-200 bg-white">
@@ -90,11 +88,21 @@ export default function Navbar() {
           <Link
             href="/"
             className={`flex h-full items-center border-b-2 px-2 text-sm font-medium transition ${homeActive
-                ? "border-green-600 text-green-700"
-                : "border-transparent text-gray-700 hover:text-green-700"
+              ? "border-green-600 text-green-700"
+              : "border-transparent text-gray-700 hover:text-green-700"
               }`}
           >
             Home
+          </Link>
+
+          <Link
+            href="/various-pdf"
+            className={`flex h-full items-center border-b-2 px-2 text-sm font-medium transition ${pdfActive
+              ? "border-green-600 text-green-700"
+              : "border-transparent text-gray-700 hover:text-green-700"
+              }`}
+          >
+            PDFs
           </Link>
 
           <div
@@ -108,8 +116,8 @@ export default function Navbar() {
               aria-expanded={isTestsOpen}
               aria-haspopup="true"
               className={`flex h-full items-center gap-1 border-b-2 px-2 text-sm font-medium transition ${testsActive
-                  ? "border-green-600 text-green-700"
-                  : "border-transparent text-gray-700 hover:text-green-700"
+                ? "border-green-600 text-green-700"
+                : "border-transparent text-gray-700 hover:text-green-700"
                 }`}
             >
               Tests
@@ -198,11 +206,23 @@ export default function Navbar() {
               href="/"
               onClick={() => setIsMobileMenuOpen(false)}
               className={`rounded-lg px-4 py-3 text-sm font-medium ${homeActive
-                  ? "bg-green-50 text-green-700"
-                  : "text-gray-700 hover:bg-gray-50"
+                ? "bg-green-50 text-green-700"
+                : "text-gray-700 hover:bg-gray-50"
                 }`}
             >
               Home
+            </Link>
+
+            {/* Fixed Mobile PDF Link pointing to /various-pdf with proper active state */}
+            <Link
+              href="/various-pdf"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`rounded-lg px-4 py-3 text-sm font-medium ${pdfActive
+                ? "bg-green-50 text-green-700"
+                : "text-gray-700 hover:bg-gray-50"
+                }`}
+            >
+              PDFs
             </Link>
 
             <button
@@ -210,8 +230,8 @@ export default function Navbar() {
               onClick={() => setIsTestsOpen((open) => !open)}
               aria-expanded={isTestsOpen}
               className={`flex items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-medium ${testsActive
-                  ? "bg-green-50 text-green-700"
-                  : "text-gray-700 hover:bg-gray-50"
+                ? "bg-green-50 text-green-700"
+                : "text-gray-700 hover:bg-gray-50"
                 }`}
             >
               Tests

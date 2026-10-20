@@ -34,6 +34,11 @@ const navigation = [
     href: "/full-length-exams",
     icon: CircleHelp,
   },
+  {
+    name: "Upload PDFs",
+    href: "/upload",
+    icon: CircleHelp,
+  },
 ];
 
 export default function Sidebar() {
@@ -50,7 +55,7 @@ export default function Sidebar() {
     <aside className="flex h-screen w-64 flex-col border-r bg-white">
       <div className="flex h-16 items-center px-6">
         <h1 className="text-xl font-bold tracking-tight">
-          sscMock
+          Section Wise
         </h1>
 
         <span className="ml-2 rounded-md bg-black px-2 py-1 text-xs font-medium text-white">
@@ -69,11 +74,10 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                active
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${active
                   ? "bg-gray-100 text-black"
                   : "text-gray-600 hover:bg-gray-50 hover:text-black"
-              }`}
+                }`}
             >
               <Icon className="h-4 w-4" />
               {item.name}
