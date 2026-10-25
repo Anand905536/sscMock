@@ -1,17 +1,18 @@
+
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function GoogleCallbackPage() {
+function GoogleCallbackContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const token = searchParams.get("token");
     const user = searchParams.get("user");
-     console.log("user",user)
+
     if (!token || !user) {
-      window.location.href = "/login?error=google_login_failed";
+      window.location.replace("/login?error=google_login_failed");
       return;
     }
 
@@ -21,11 +22,10 @@ export default function GoogleCallbackPage() {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(userData));
 
-      window.location.href = "/";
+      window.location.replace("/");
     } catch (error) {
       console.error("Google callback error:", error);
-
-      window.location.href = "/login?error=google_login_failed";
+      window.location.replace("/login?error=google_login_failed");
     }
   }, [searchParams]);
 
@@ -35,11 +35,24 @@ export default function GoogleCallbackPage() {
         <h1 className="text-xl font-semibold text-black">
           Signing you in...
         </h1>
-
         <p className="mt-2 text-sm text-gray-500">
           Please wait a moment.
         </p>
       </div>
     </main>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center">
+          Signing you in...
+        </main>
+      }
+    >
+      <GoogleCallbackContent />
+    </Suspense>
   );
 }
