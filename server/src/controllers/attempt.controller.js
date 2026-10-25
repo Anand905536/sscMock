@@ -9,15 +9,13 @@ export const getAttemptResults = async (req, res) => {
     const { attemptId } = req.params;
     const user = req.user.userId;
 
-    const attempt = await Attempt.findOne({
-      _id: attemptId,
-      user,
-      status: "completed",
-    }).populate(
-      "test",
-      "title category durationMinutes marksPerQuestion negativeMarks subject topic"
-    );
+    const attempt = await Attempt.findOne({ _id: attemptId, user, status: "completed", })
+      .populate(
+        "test",
+        "title category durationMinutes marksPerQuestion negativeMarks subject topic"
+      );
 
+    // console.log("attempt",attempt)
     if (!attempt) {
       return res.status(404).json({
         message: "Completed attempt not found",
@@ -112,25 +110,18 @@ export const getAttemptResults = async (req, res) => {
         ? (currentUserBest.score / currentUserMaximum) * 100
         : percentage;
 
-    // Rank and percentile based on the student's best result
-    const candidatesBelow = candidatePercentages.filter(
-      (value) => value < currentUserPercentage
-    ).length;
 
-    const candidatesTied = candidatePercentages.filter(
-      (value) => value === currentUserPercentage
-    ).length;
+    // Rank and percentile based on the current attempt's percentage
 
-    const percentile =
-      totalCandidates > 0
-        ? ((candidatesBelow + 0.5 * candidatesTied) / totalCandidates) * 100
-        : 0;
+    const candidatesBelow = candidatePercentages.filter((value) => value < percentage).length;
 
-    const candidatesAbove = candidatePercentages.filter(
-      (value) => value > currentUserPercentage
-    ).length;
+    const percentile =totalCandidates > 0 ? (candidatesBelow / totalCandidates) * 100 : 0;
+
+    const candidatesAbove = candidatePercentages.filter((value) => value > percentage).length;
 
     const rank = candidatesAbove + 1;
+
+// console.log("condidate from attempcontroller",rank,percentile,candidatesAbove,candidatesBelow)
 
 
     // Calculate correct / incorrect / unanswered
@@ -202,30 +193,30 @@ export const getAttemptResults = async (req, res) => {
       }
     }
 
-   // Histogram: divide maximum marks into 5 equal ranges
-const marksDistribution = [];
+    // Histogram: divide maximum marks into 5 equal ranges
+    const marksDistribution = [];
 
-const interval = maximumMarks / 5;
+    const interval = maximumMarks / 5;
 
-for (let i = 0; i < 5; i++) {
-  const start = i * interval;
-  const end = (i + 1) * interval;
+    for (let i = 0; i < 5; i++) {
+      const start = i * interval;
+      const end = (i + 1) * interval;
 
-  const students = candidatePercentages.filter((percentage) => {
-    const candidateMarks = (percentage / 100) * maximumMarks;
+      const students = candidatePercentages.filter((percentage) => {
+        const candidateMarks = (percentage / 100) * maximumMarks;
 
-    if (i === 4) {
-      return candidateMarks >= start && candidateMarks <= end;
+        if (i === 4) {
+          return candidateMarks >= start && candidateMarks <= end;
+        }
+
+        return candidateMarks >= start && candidateMarks < end;
+      }).length;
+
+      marksDistribution.push({
+        range: `${Number(start.toFixed(2))}–${Number(end.toFixed(2))}`,
+        students,
+      });
     }
-
-    return candidateMarks >= start && candidateMarks < end;
-  }).length;
-
-  marksDistribution.push({
-    range: `${Number(start.toFixed(2))}–${Number(end.toFixed(2))}`,
-    students,
-  });
-}
 
     res.status(200).json({
       message: "Attempt result fetched successfully",
@@ -258,16 +249,13 @@ for (let i = 0; i < 5; i++) {
   } catch (error) {
     console.error("getAttemptResults error:", error);
 
-  res.status(500).json({
-    message: "Failed to fetch attempt result",
-    error: error.message,
-  });
+    res.status(500).json({
+      message: "Failed to fetch attempt result",
+      error: error.message,
+    });
   }
 };
-
-
 // start attempt
-
 export const startAttempt = async (req, res) => {
   try {
     const { test } = req.body
@@ -314,15 +302,14 @@ export const startAttempt = async (req, res) => {
       })
     }
 
-
     const questions = await Question.find({ test, })
+    // console.log("questions",test)
 
     if (questions.length == 0) {
       return res.status(400).json({
         message: "This test has no questions",
       })
     }
-
 
     const attempt = await Attempt.create({
       user,

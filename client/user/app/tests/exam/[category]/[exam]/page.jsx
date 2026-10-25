@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState,useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Clock, HelpCircle, Award, CheckCircle2, RotateCcw, Play, BookOpen, Layers } from "lucide-react";
+import { Clock, HelpCircle, Award, CheckCircle2, RotateCcw, Play, BookOpen, Layers, Zap } from "lucide-react";
 
 export default function ExploreExamPage() {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function ExploreExamPage() {
   const [error, setError] = useState("");
   const [inProgressByExamId, setInProgressByExamId] = useState({});
   const startLockRef = useRef(false);
-    const [starting, setStarting] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   const examName = examSlug
     .split("-")
@@ -192,8 +192,23 @@ export default function ExploreExamPage() {
     [tests]
   );
 
+  // Memory Based Tests Filtering
+  const memoryTests = useMemo(
+    () =>
+      tests.filter((test) =>
+        ["memory", "memory-based", "memory_based"].includes(
+          String(test.type || "").toLowerCase()
+        )
+      ),
+    [tests]
+  );
+
   const activeList =
-    activeTab === "mock" ? mockTests : pyqTests;
+    activeTab === "mock"
+      ? mockTests
+      : activeTab === "pyq"
+      ? pyqTests
+      : memoryTests;
 
   const handleStartTest = (test) => {
     const testId = test._id || test.id;
@@ -201,7 +216,6 @@ export default function ExploreExamPage() {
 
     if (test.isFullLength) {
       if (test.inProgressAttempt) {
-        // Existing in-progress attempts are resumed directly, without creating a new attempt.
         router.push(`/full-length-exams/${test._id}`);
       } else {
         router.push(`/full-length-exams/${test._id}/instructions`);
@@ -226,7 +240,7 @@ export default function ExploreExamPage() {
           </h1>
 
           <p className="mt-1 text-sm text-slate-500">
-            Practice exam-level mock tests and solved previous-year papers tailored for {examName}.
+            Practice exam-level mock tests, memory-based questions, and solved previous-year papers tailored for {examName}.
           </p>
         </div>
 
@@ -240,6 +254,16 @@ export default function ExploreExamPage() {
               }`}
           >
             <BookOpen className="w-4 h-4" /> Mock Tests ({mockTests.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab("memory")}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "memory"
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
+              }`}
+          >
+            <Zap className="w-4 h-4" /> Memory-Based ({memoryTests.length})
           </button>
 
           <button
@@ -271,7 +295,7 @@ export default function ExploreExamPage() {
         ) : activeList.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
             <h2 className="font-bold text-slate-800">
-              No {activeTab === "mock" ? "mock tests" : "previous-year papers"} available
+              No {activeTab === "mock" ? "mock tests" : activeTab === "memory" ? "memory-based tests" : "previous-year papers"} available
             </h2>
             <p className="mt-1 text-xs text-slate-500">
               No tests have been added for {examName} in this section yet.

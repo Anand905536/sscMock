@@ -282,7 +282,7 @@ export default function ResultPage() {
                 )}
 
                 {/* Clean Individual Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     
                     {/* Card 1: Final Score */}
                     <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2 flex flex-col justify-between">
@@ -301,19 +301,19 @@ export default function ResultPage() {
                     </div>
 
                     {/* Card 2: Rank & Percentile */}
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2 flex flex-col justify-between">
+                    {/* <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2 flex flex-col justify-between">
                         <div className="flex items-center justify-between">
                             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Standing & Percentile</span>
                             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><Zap className="w-4 h-4" /></div>
                         </div>
                         <div>
-                            <div className="text-3xl font-black text-slate-900">#{result.rank}</div>
+                            <div className="text-3xl font-black text-slate-900">{result.rank}</div>
                             <p className="text-xs font-bold text-indigo-600 mt-1">Top {result.percentile}% Candidates</p>
                         </div>
                         <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100">
                             Compared to {result.totalCandidates} total applicants
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Card 3: Accuracy Rate */}
                     <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2 flex flex-col justify-between">
@@ -359,7 +359,7 @@ export default function ResultPage() {
                 </div>
 
                 {/* Score Range Distribution Card */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+                {/* <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Score Brackets & Candidate Distribution</h3>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
@@ -371,7 +371,7 @@ export default function ResultPage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </div> */}
 
                 {/* Bottom Navigation Actions */}
                 <div className="flex flex-col sm:flex-row gap-4 pt-2">

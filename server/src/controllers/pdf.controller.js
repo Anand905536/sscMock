@@ -26,8 +26,6 @@ export const savePdfURL = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error" });
     }
 }
-
-
 export const getAllPdf = async (req, res) => {
     try {
         const pdfs = await Pdf.find().sort({ createdAt: -1 });
@@ -37,7 +35,6 @@ export const getAllPdf = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error" });
     }
 }
-
 export const toDeletePdf = async (req, res) => {
     try {
         await Pdf.findByIdAndDelete(req.params.id);

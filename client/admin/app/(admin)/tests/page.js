@@ -46,7 +46,7 @@ export default function TestsPage() {
         },
       });
 
-      console.log("called", data.tests)
+      // console.log("called", data.tests)
 
       setTests(data || []);
     } catch (err) {

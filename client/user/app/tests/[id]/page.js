@@ -202,7 +202,7 @@ export default function TestInstructionsPage() {
         <button
           onClick={handleStartTest}
           disabled={starting}
-          className="w-full rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-extrabold text-white shadow-md hover:bg-emerald-700 hover:shadow-emerald-900/10 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer w-full rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-extrabold text-white shadow-md hover:bg-emerald-700 hover:shadow-emerald-900/10 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span>{starting ? "Initializing Test..." : "Start Test Now"}</span>
           {!starting && <ArrowRight className="w-4 h-4" />}

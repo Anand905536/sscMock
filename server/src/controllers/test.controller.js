@@ -11,6 +11,8 @@ export const createTest = async (req, res) => {
             durationMinutes, marksPerQuestion, negativeMarks, status,
         } = req.body;
 
+        console.log("from create test test controller", exam, type)
+
         if (
             !title ||
             !category ||
@@ -75,65 +77,98 @@ export const createTest = async (req, res) => {
 
 
 // get all tests
-export const getTests = async (req, res) => {
 
+export const getTests = async (req, res) => {
     try {
-        let query = Test.find();
+        const match = {};
 
         // Normal users can only see published tests
         if (req.user.role !== "admin") {
-            query = query.find({
-                status: "published",
-            });
+            match.status = "published";
         }
 
-
-
-        // Optional subject filter
+        // Optional filters
         if (req.query.subject) {
-            query = query.find({
-                subject: req.query.subject,
-            });
+            match.subject = req.query.subject;
         }
 
         if (req.query.category) {
-            query = query.find({
-                category: new RegExp(`^${req.query.category}$`, "i")
-            });
+            match.category = new RegExp(
+                `^${req.query.category}$`,
+                "i"
+            );
         }
 
         if (req.query.exam) {
-            query = query.find({ exam: req.query.exam.toLowerCase() });
+            match.exam = req.query.exam.toLowerCase();
         }
 
         if (req.query.type) {
-            query = query.find({ type: req.query.type.toLowerCase() });
+            match.type = req.query.type.toLowerCase();
         }
 
-        // Optional topic filter
         if (req.query.topic) {
-            query = query.find({
-                topic: req.query.topic,
-            });
+            match.topic = req.query.topic;
         }
 
-        const tests = await query.sort({
-            createdAt: -1,
-        });
+        const tests = await Test.aggregate([
+            // Apply filters first
+            {
+                $match: match
+            },
+
+            // Find questions associated with each test
+            {
+                $lookup: {
+                    from: "questions",
+                    localField: "_id",
+                    foreignField: "test",
+                    as: "questions"
+                }
+            },
+
+            // Count associated questions
+            {
+                $addFields: {
+                    totalQuestions: {
+                        $size: "$questions"
+                    }
+                }
+            },
+
+            // Remove the questions array
+            {
+                $project: {
+                    questions: 0
+                }
+            },
+
+            // Latest tests first
+            {
+                $sort: {
+                    createdAt: -1
+                }
+            }
+        ]);
 
         res.status(200).json(tests);
-    } catch (err) {
+
+    } catch (error) {
+        console.error("Error fetching tests:", error);
+
         res.status(500).json({
             message: "Failed to fetch tests",
-            error: err.message,
+            error: error.message
         });
     }
 };
+
 
 // get test by ID 
 export const getTestById = async (req, res) => {
     try {
         const test = await Test.findById(req.params.id)
+        // console.log("getTests", req.params)
         if (!test) {
             return res.status(404).json({
                 message: "Test not found",

@@ -48,6 +48,8 @@ const testSchema = new mongoose.Schema({
         default: 1,
         min: 0,
     },
+   
+
 
     negativeMarks: {
         type: Number,
