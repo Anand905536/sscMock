@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from 'react-loader-spinner';
 import { Clock, BookOpen, BookmarkCheck, ShieldAlert, ArrowRight, Layers } from "lucide-react";
+import { apiRequest } from "@/lib/api";
 
 export default function TestInstructionsPage() {
   const { id } = useParams();
@@ -22,22 +23,13 @@ export default function TestInstructionsPage() {
           router.push("/login");
           return;
         }
+        const data = await apiRequest(`/tests/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-        const response = await fetch(
-          `http://localhost:5000/api/tests/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert(data.message || "Failed to load test");
-          return;
-        }
+        setTest(data.test || data);
 
         setTest(data.test || data);
       } catch (error) {
@@ -57,27 +49,15 @@ export default function TestInstructionsPage() {
 
       const token = localStorage.getItem("token");
 
-      const response = await fetch(
-        "http://localhost:5000/api/attempts/start",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            test: id,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Failed to start test");
-        setStarting(false);
-        return;
-      }
+      const data = await apiRequest("/attempts/start", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          test: id,
+        }),
+      });
 
       router.push(`/tests/${id}/attempt?attemptId=${data.attempt.id}`);
     } catch (error) {
@@ -108,7 +88,7 @@ export default function TestInstructionsPage() {
   return (
     <main className="min-h-screen bg-slate-50/60 py-12 px-4 sm:px-6">
       <div className="mx-auto max-w-3xl space-y-6">
-        
+
         {/* Header Card */}
         <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
           <div className="flex items-center gap-2 mb-3">

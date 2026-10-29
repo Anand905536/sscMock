@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiRequest } from "@/lib/api";
 
 function UserPdfPanel() {
   const [pdfs, setPdfs] = useState([]);
@@ -22,22 +23,12 @@ function UserPdfPanel() {
       }
 
       try {
-        const res = await fetch(
-          "http://localhost:5000/api/pdfs/get-pdfs",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || "Failed to fetch PDFs");
-        }
+        const data = await apiRequest("/pdfs/get-pdfs", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (data.success) {
           setPdfs(data.data || []);

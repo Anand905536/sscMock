@@ -3,9 +3,8 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
+import { apiRequest } from "@/lib/api";
 
-
-const API = "http://localhost:5000/api/full-length-exams";
 
 export default function FullLengthExamPage() {
     const params = useParams();
@@ -36,7 +35,7 @@ export default function FullLengthExamPage() {
     const currentSection = exam?.sections?.[sectionIndex];
     const currentQuestion = currentSection?.questions?.[questionIndex];
 
-        const startAttemptPromiseRef=useRef(null)
+    const startAttemptPromiseRef = useRef(null)
     const writeQueueRef = useRef(Promise.resolve());
 
     const enqueueWrite = useCallback((operation) => {
@@ -53,7 +52,6 @@ export default function FullLengthExamPage() {
         async (overrides = {}) => {
             if (!attemptId) return null;
 
-            const token = localStorage.getItem("token");
             // Only committed answers are saved by Save & Next.
             // Current option selections remain local React state and disappear on refresh.
             const payload = {
@@ -68,29 +66,18 @@ export default function FullLengthExamPage() {
                 ...overrides,
             };
 
-            const data = await enqueueWrite(async () => {
-                const response = await fetch(
-                    `${API}/attempts/${attemptId}/progress`,
+            const data = await enqueueWrite(() =>
+                apiRequest(
+                    `/full-length-exams/attempts/${attemptId}/progress`,
                     {
                         method: "PATCH",
                         headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
                         },
                         body: JSON.stringify(payload),
                     }
-                );
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(
-                        result.message || "Unable to save exam progress."
-                    );
-                }
-
-                return result;
-            });
+                )
+            );
 
             return data;
         },
@@ -108,15 +95,13 @@ export default function FullLengthExamPage() {
         async (s, q, selectedAnswer) => {
             if (!attemptId) throw new Error("Attempt is not ready");
 
-            const token = localStorage.getItem("token");
-            const data = await enqueueWrite(async () => {
-                const response = await fetch(
-                    `${API}/attempts/${attemptId}/answers`,
+            const data = await enqueueWrite(() =>
+                apiRequest(
+                    `/full-length-exams/attempts/${attemptId}/answers`,
                     {
                         method: "PUT",
                         headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
                         },
                         body: JSON.stringify({
                             sectionIndex: s,
@@ -124,18 +109,11 @@ export default function FullLengthExamPage() {
                             selectedAnswer,
                         }),
                     }
-                );
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(
-                        result.message || "Unable to save answer."
-                    );
-                }
-                return result;
-            });
+                )
+            );
             return data;
         },
-        [attemptId,enqueueWrite]
+        [attemptId, enqueueWrite]
     );
 
     const submitLockRef = useRef(false);
@@ -151,27 +129,17 @@ export default function FullLengthExamPage() {
         try {
             // 1. Force clear any pending writes/saves before submitting
             await writeQueueRef.current;
-            
-            const token = localStorage.getItem("token");
 
-            const response = await fetch(
-                `${API}/attempts/${attemptId}/submit`,
+            const data = await apiRequest(
+                `/full-length-exams/attempts/${attemptId}/submit`,
                 {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
                     body: JSON.stringify({}),
                 }
             );
-
-            const data = await response.json();
-
-            console.log("data after submission",data)
-            if (!response.ok) {
-                throw new Error(data.message || "Exam submitted");
-            }
 
             // 2. Clear out local navigation state to avoid stale session cache
             localStorage.removeItem(`exam_timer_${attemptId}`);
@@ -184,7 +152,7 @@ export default function FullLengthExamPage() {
                     exam: exam.exam,
                 })
             );
-            
+
             // 3. Use replace instead of push so the user cannot back-button into a submitted attempt
             router.replace(`/full-length-exams/result/${attemptId}`);
         } catch (err) {
@@ -205,185 +173,170 @@ export default function FullLengthExamPage() {
         }));
     }, [exam, sectionIndex, questionIndex]);
 
-  
-useEffect(() => {
-    let cancelled = false;
 
-    async function loadExam() {
-        try {
-            setLoading(true);
-            setError("");
+    useEffect(() => {
+        let cancelled = false;
 
-            const token = localStorage.getItem("token");
-
-            if (!token) {
-                router.push("/login");
-                return;
-            }
-
-            if (!examId || examId === "ssc-cgl") {
-                throw new Error("ExamId is unavailable");
-            }
-
-            // 1. Load exam details
-            const examResponse = await fetch(`${API}/${examId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                cache: "no-store",
-            });
-
-            const examData = await examResponse.json();
-            console.log("data",examData)
-            if (!examResponse.ok) {
-                throw new Error(
-                    examData.message || "Unable to load exam"
-                );
-            }
-
-            const examObject = examData;
-
-            if (
-                !examObject ||
-                typeof examObject !== "object" ||
-                !Array.isArray(examObject.sections) ||
-                examObject.sections.length === 0
-            ) {
-                throw new Error("Exam sections are not available");
-            }
-
-            const hasQuestions = examObject.sections.some(
-                (section) =>
-                    Array.isArray(section.questions) &&
-                    section.questions.length > 0
-            );
-
-            if (!hasQuestions) {
-                throw new Error(
-                    "Is exam ke sections mein questions add nahi hain."
-                );
-            }
-
-            // 2. Start the attempt only once per in-flight request
-            if (!startAttemptPromiseRef.current) {
-                const startRequest = (async () => {
-                    const response = await fetch(
-                        `${API}/attempts/start`,
-                        {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${token}`,
-                            },
-                            body: JSON.stringify({ examId }),
-                        }
-                    );
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(
-                            data.message || "Exam start nahi hua."
-                        );
-                    }
-
-                    if (!data.attemptId) {
-                        throw new Error(
-                            "Attempt ID nahi mili. Backend response check karo."
-                        );
-                    }
-
-                    return data;
-                })();
-
-                startAttemptPromiseRef.current = startRequest;
-            }
-
-            let startData;
-
+        async function loadExam() {
             try {
-                startData = await startAttemptPromiseRef.current;
-            } catch (err) {
-                startAttemptPromiseRef.current = null;
-                throw err;
-            }
+                setLoading(true);
+                setError("");
 
-            // Don't update state if this effect has been cleaned up
-            if (cancelled) return;
+                const token = localStorage.getItem("token");
 
-            // 3. Restore saved answers
-            const restoredSavedAnswers = {};
-            const restoredAnswers = {};
+                if (!token) {
+                    router.push("/login");
+                    return;
+                }
 
-            for (const item of startData.answers || []) {
-                const key = `${item.sectionIndex}-${item.questionIndex}`;
+                if (!examId || examId === "ssc-cgl") {
+                    throw new Error("ExamId is unavailable");
+                }
 
-                if (item.selectedAnswer) {
-                    restoredSavedAnswers[key] = item.selectedAnswer;
+                const examData = await apiRequest(
+                    `/full-length-exams/${examId}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        cache: "no-store",
+                    }
+                );
 
-                    const options =
-                        examObject.sections[item.sectionIndex]
-                            ?.questions?.[item.questionIndex]?.options || [];
+                const examObject = examData;
 
-                    const optionIndex = options.indexOf(
-                        item.selectedAnswer
+                if (
+                    !examObject ||
+                    typeof examObject !== "object" ||
+                    !Array.isArray(examObject.sections) ||
+                    examObject.sections.length === 0
+                ) {
+                    throw new Error("Exam sections are not available");
+                }
+
+                const hasQuestions = examObject.sections.some(
+                    (section) =>
+                        Array.isArray(section.questions) &&
+                        section.questions.length > 0
+                );
+
+                if (!hasQuestions) {
+                    throw new Error(
+                        "Is exam ke sections mein questions add nahi hain."
                     );
+                }
 
-                    if (optionIndex >= 0) {
-                        restoredAnswers[key] = optionIndex;
+                // 2. Start the attempt only once per in-flight request
+                if (!startAttemptPromiseRef.current) {
+                    const startRequest = (async () => {
+                        const data = await apiRequest(
+                            "/full-length-exams/attempts/start",
+                            {
+                                method: "POST",
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({ examId }),
+                            }
+                        );
+
+                        if (!data.attemptId) {
+                            throw new Error(
+                                "Attempt ID nahi mili. Backend response check karo."
+                            );
+                        }
+
+                        return data;
+                    })();
+
+                    startAttemptPromiseRef.current = startRequest;
+                }
+
+                let startData;
+
+                try {
+                    startData = await startAttemptPromiseRef.current;
+                } catch (err) {
+                    startAttemptPromiseRef.current = null;
+                    throw err;
+                }
+
+                // Don't update state if this effect has been cleaned up
+                if (cancelled) return;
+
+                // 3. Restore saved answers
+                const restoredSavedAnswers = {};
+                const restoredAnswers = {};
+
+                for (const item of startData.answers || []) {
+                    const key = `${item.sectionIndex}-${item.questionIndex}`;
+
+                    if (item.selectedAnswer) {
+                        restoredSavedAnswers[key] = item.selectedAnswer;
+
+                        const options =
+                            examObject.sections[item.sectionIndex]
+                                ?.questions?.[item.questionIndex]?.options || [];
+
+                        const optionIndex = options.indexOf(
+                            item.selectedAnswer
+                        );
+
+                        if (optionIndex >= 0) {
+                            restoredAnswers[key] = optionIndex;
+                        }
                     }
                 }
-            }
 
-            const restoredMarkedForReview = Object.fromEntries(
-                (startData.markedForReview || []).map(
-                    (key) => [key, true]
-                )
-            );
+                const restoredMarkedForReview = Object.fromEntries(
+                    (startData.markedForReview || []).map(
+                        (key) => [key, true]
+                    )
+                );
 
-            const restoredVisitedQuestions = Object.fromEntries(
-                (startData.visitedQuestions || []).map(
-                    (key) => [key, true]
-                )
-            );
+                const restoredVisitedQuestions = Object.fromEntries(
+                    (startData.visitedQuestions || []).map(
+                        (key) => [key, true]
+                    )
+                );
 
-            // 4. Update exam state
-            setExam(examObject);
-            setAttemptId(startData.attemptId);
-            setSectionIndex(startData.currentSectionIndex ?? 0);
-            setQuestionIndex(startData.currentQuestionIndex ?? 0);
-            setAnswers(restoredAnswers);
-            setSavedAnswers(restoredSavedAnswers);
-            setMarkedForReview(restoredMarkedForReview);
-            setVisitedQuestions(restoredVisitedQuestions);
-            setSecondsLeft(
-                Math.max(0, Number(startData.secondsLeft) || 0)
-            );
-            setIsPaused(Boolean(startData.paused));
-            setShowResumeModal(Boolean(startData.paused));
+                // 4. Update exam state
+                setExam(examObject);
+                setAttemptId(startData.attemptId);
+                setSectionIndex(startData.currentSectionIndex ?? 0);
+                setQuestionIndex(startData.currentQuestionIndex ?? 0);
+                setAnswers(restoredAnswers);
+                setSavedAnswers(restoredSavedAnswers);
+                setMarkedForReview(restoredMarkedForReview);
+                setVisitedQuestions(restoredVisitedQuestions);
+                setSecondsLeft(
+                    Math.max(0, Number(startData.secondsLeft) || 0)
+                );
+                setIsPaused(Boolean(startData.paused));
+                setShowResumeModal(Boolean(startData.paused));
 
-        } catch (err) {
-            if (!cancelled) {
-                setError(err.message || "Exam didn't load");
-            }
-        } finally {
-            if (!cancelled) {
-                setLoading(false);
+            } catch (err) {
+                if (!cancelled) {
+                    setError(err.message || "Exam didn't load");
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         }
-    }
 
-    if (examId) {
-        loadExam();
-    } else {
-        setError("ExamId is unavailable");
-        setLoading(false);
-    }
+        if (examId) {
+            loadExam();
+        } else {
+            setError("ExamId is unavailable");
+            setLoading(false);
+        }
 
-    return () => {
-        cancelled = true;
-    };
-}, [examId, router]);
+        return () => {
+            cancelled = true;
+        };
+    }, [examId, router]);
 
     useEffect(() => {
         if (!exam || !attemptId || loading || submitting || isPaused) return;
@@ -401,15 +354,17 @@ useEffect(() => {
                 visitedQuestions: Object.keys(visitedQuestions).filter((key) => visitedQuestions[key]),
             };
 
-            fetch(`${API}/attempts/${attemptId}/progress`, {
-                method: "PATCH",
-                keepalive: true,
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(payload),
-            }).catch(() => {});
+            apiRequest(
+                `/full-length-exams/attempts/${attemptId}/progress`,
+                {
+                    method: "PATCH",
+                    keepalive: true,
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(payload),
+                }
+            ).catch(() => { });
         };
 
         window.addEventListener("pagehide", pauseOnLeave);

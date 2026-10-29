@@ -2,14 +2,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
-import { 
-    Award, 
-    CheckCircle2, 
-    ChevronRight, 
-    Clock, 
-    HelpCircle, 
-    XCircle, 
-    ArrowLeft, 
+import {
+    Award,
+    CheckCircle2,
+    ChevronRight,
+    Clock,
+    HelpCircle,
+    XCircle,
+    ArrowLeft,
     RotateCcw,
     Zap,
     Target,
@@ -17,6 +17,8 @@ import {
     Trophy,
     Percent
 } from "lucide-react";
+import { apiRequest } from "@/lib/api";
+
 
 export default function ResultPage() {
     const params = useParams() || {};
@@ -84,37 +86,34 @@ export default function ResultPage() {
                     return;
                 }
 
-                const response = await fetch(
-                    `http://localhost:5000/api/attempts/${attemptId}/result`,
-                    {
+                let data;
+
+                try {
+                    data = await apiRequest(`/attempts/${attemptId}/result`, {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
-                    }
-                );
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    setErrorMessage(data.message || "Failed to load result");
+                    });
+                } catch (error) {
+                    setErrorMessage(error.message || "Failed to load result");
                     router.push("/");
                     return;
                 }
-
                 setResult(data.result);
 
-                const historyResponse = await fetch(
-                    "http://localhost:5000/api/attempts/my",
-                    {
+                let historyData = null;
+
+                try {
+                    historyData = await apiRequest("/attempts/my", {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
-                    }
-                );
+                    });
+                } catch (error) {
+                    console.error(error);
+                }
 
-                const historyData = await historyResponse.json();
-
-                if (historyResponse.ok && Array.isArray(historyData)) {
+                if (Array.isArray(historyData)) {
                     const sameTestAttempts = historyData
                         .filter((attempt) => attempt.test?._id === data.result.test._id)
                         .filter((attempt) => attempt.status === "completed");
@@ -283,7 +282,7 @@ export default function ResultPage() {
 
                 {/* Clean Individual Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    
+
                     {/* Card 1: Final Score */}
                     <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2 flex flex-col justify-between">
                         <div className="flex items-center justify-between">
@@ -383,7 +382,7 @@ export default function ResultPage() {
                         <ArrowLeft className="w-4 h-4" /> Back to Home
                     </button>
 
-                    <button
+                    {/* <button
                         type="button"
                         onClick={() => {
                             const subject = result.test?.subject?.toLowerCase() || "english";
@@ -394,7 +393,7 @@ export default function ResultPage() {
                     >
                         <span>Try Another Test</span>
                         <ChevronRight className="w-4 h-4" />
-                    </button>
+                    </button> */}
                 </div>
 
             </div>

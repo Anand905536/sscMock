@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ThreeDots } from 'react-loader-spinner';
-
+import { apiRequest } from "@/lib/api";
 
 export default function AttemptPage() {
     const { id } = useParams();
@@ -73,47 +73,29 @@ export default function AttemptPage() {
                     return;
                 }
 
-                const response = await fetch(
-                    `http://localhost:5000/api/questions/test/${id}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    alert(data.message || "Failed to load questions");
-                    return;
-                }
+                const data = await apiRequest(`/questions/test/${id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
 
                 const loadedQuestions = Array.isArray(data)
                     ? data
                     : data.questions || [];
 
                 setQuestions(loadedQuestions);
+                const testData = await apiRequest(`/tests/${id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
 
-                const testResponse = await fetch(
-                    `http://localhost:5000/api/tests/${id}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
+                const duration =
+                    testData.test?.durationMinutes ||
+                    testData.durationMinutes ||
+                    0;
 
-                const testData = await testResponse.json();
-
-                if (testResponse.ok) {
-                    const duration =
-                        testData.test?.durationMinutes ||
-                        testData.durationMinutes ||
-                        0;
-
-                    setTimeLeft(duration * 60);
-                }
+                setTimeLeft(duration * 60);
             } catch (error) {
                 console.error(error);
                 alert("Something went wrong");
@@ -174,31 +156,15 @@ export default function AttemptPage() {
                 question: question._id,
                 selectedAnswer: answers[question._id] || "",
             }));
-
-            const response = await fetch(
-                `http://localhost:5000/api/attempts/${attemptId}/submit`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        answers: formattedAnswers,
-                    }),
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (!autoSubmit) {
-                    alert(data.message || "Failed to submit test");
-                }
-
-                setSubmitting(false);
-                return;
-            }
+            await apiRequest(`/attempts/${attemptId}/submit`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    answers: formattedAnswers,
+                }),
+            });
 
             router.replace(
                 `/tests/${id}/result?attemptId=${attemptId}`

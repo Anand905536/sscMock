@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -10,6 +11,11 @@ import {
   Menu,
   X,
 } from "lucide-react";
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+const BACKEND_URL = API_URL.replace(/\/api\/?$/, "");
 
 const testLinks = [
   { label: "SSC Exams", href: "/tests/category/ssc" },
@@ -65,7 +71,7 @@ export default function Navbar() {
 
     return currentUser.profilePicture.startsWith("http")
       ? currentUser.profilePicture
-      : `http://localhost:5000${currentUser.profilePicture}`;
+      : `${BACKEND_URL}${currentUser.profilePicture}`;
   };
 
   const homeActive = isMounted && pathname === "/";
@@ -83,24 +89,26 @@ export default function Navbar() {
           Subject Wise
         </Link>
 
-        {/* Desktop navigation: visible from 768px */}
+        {/* Desktop navigation */}
         <div className="absolute left-1/2 hidden h-16 -translate-x-1/2 items-center gap-8 md:flex">
           <Link
             href="/"
-            className={`flex h-full items-center border-b-2 px-2 text-sm font-medium transition ${homeActive
-              ? "border-green-600 text-green-700"
-              : "border-transparent text-gray-700 hover:text-green-700"
-              }`}
+            className={`flex h-full items-center border-b-2 px-2 text-sm font-medium transition ${
+              homeActive
+                ? "border-green-600 text-green-700"
+                : "border-transparent text-gray-700 hover:text-green-700"
+            }`}
           >
             Home
           </Link>
 
           <Link
             href="/various-pdf"
-            className={`flex h-full items-center border-b-2 px-2 text-sm font-medium transition ${pdfActive
-              ? "border-green-600 text-green-700"
-              : "border-transparent text-gray-700 hover:text-green-700"
-              }`}
+            className={`flex h-full items-center border-b-2 px-2 text-sm font-medium transition ${
+              pdfActive
+                ? "border-green-600 text-green-700"
+                : "border-transparent text-gray-700 hover:text-green-700"
+            }`}
           >
             PDFs
           </Link>
@@ -115,15 +123,17 @@ export default function Navbar() {
               onClick={() => setIsTestsOpen((open) => !open)}
               aria-expanded={isTestsOpen}
               aria-haspopup="true"
-              className={`flex h-full items-center gap-1 border-b-2 px-2 text-sm font-medium transition ${testsActive
-                ? "border-green-600 text-green-700"
-                : "border-transparent text-gray-700 hover:text-green-700"
-                }`}
+              className={`flex h-full items-center gap-1 border-b-2 px-2 text-sm font-medium transition ${
+                testsActive
+                  ? "border-green-600 text-green-700"
+                  : "border-transparent text-gray-700 hover:text-green-700"
+              }`}
             >
               Tests
               <ChevronDown
-                className={`h-4 w-4 transition-transform ${isTestsOpen ? "rotate-180" : ""
-                  }`}
+                className={`h-4 w-4 transition-transform ${
+                  isTestsOpen ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -182,7 +192,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile menu button: visible below 768px */}
+        {/* Mobile menu button */}
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen((open) => !open)}
@@ -198,29 +208,30 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile menu: only visible below 768px */}
+      {/* Mobile menu */}
       {isMobileMenuOpen && (
         <div className="border-t border-gray-200 bg-white px-4 py-3 shadow-md md:hidden">
           <div className="flex flex-col gap-1">
             <Link
               href="/"
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`rounded-lg px-4 py-3 text-sm font-medium ${homeActive
-                ? "bg-green-50 text-green-700"
-                : "text-gray-700 hover:bg-gray-50"
-                }`}
+              className={`rounded-lg px-4 py-3 text-sm font-medium ${
+                homeActive
+                  ? "bg-green-50 text-green-700"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
             >
               Home
             </Link>
 
-            {/* Fixed Mobile PDF Link pointing to /various-pdf with proper active state */}
             <Link
               href="/various-pdf"
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`rounded-lg px-4 py-3 text-sm font-medium ${pdfActive
-                ? "bg-green-50 text-green-700"
-                : "text-gray-700 hover:bg-gray-50"
-                }`}
+              className={`rounded-lg px-4 py-3 text-sm font-medium ${
+                pdfActive
+                  ? "bg-green-50 text-green-700"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
             >
               PDFs
             </Link>
@@ -229,15 +240,17 @@ export default function Navbar() {
               type="button"
               onClick={() => setIsTestsOpen((open) => !open)}
               aria-expanded={isTestsOpen}
-              className={`flex items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-medium ${testsActive
-                ? "bg-green-50 text-green-700"
-                : "text-gray-700 hover:bg-gray-50"
-                }`}
+              className={`flex items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-medium ${
+                testsActive
+                  ? "bg-green-50 text-green-700"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
             >
               Tests
               <ChevronDown
-                className={`h-4 w-4 transition-transform ${isTestsOpen ? "rotate-180" : ""
-                  }`}
+                className={`h-4 w-4 transition-transform ${
+                  isTestsOpen ? "rotate-180" : ""
+                }`}
               />
             </button>
 

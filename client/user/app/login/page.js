@@ -1,8 +1,10 @@
+
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { apiRequest } from "@/lib/api";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -29,23 +31,12 @@ export default function LoginPage() {
             setLoading(true);
             setError("");
 
-            const response = await fetch(
-                "http://localhost:5000/api/auth/login",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(form),
-                }
-            );
+            const data = await apiRequest("/auth/login", {
+                method: "POST",
+                body: JSON.stringify(form),
+            });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || "Login failed");
-            }
-
+            // Keep existing token and user storage
             localStorage.setItem("token", data.token);
             localStorage.setItem("user", JSON.stringify(data.user));
 
@@ -99,6 +90,7 @@ export default function LoginPage() {
                             value={form.email}
                             onChange={handleChange}
                             required
+                            autoComplete="email"
                             className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-black"
                             placeholder="you@example.com"
                         />
@@ -119,6 +111,7 @@ export default function LoginPage() {
                             value={form.password}
                             onChange={handleChange}
                             required
+                            autoComplete="current-password"
                             className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-black"
                             placeholder="••••••••"
                         />
@@ -139,7 +132,7 @@ export default function LoginPage() {
                     <div className="h-px flex-1 bg-gray-200" />
                 </div>
 
-                {/* Google button - OAuth will be connected next */}
+                {/* Google OAuth redirect remains unchanged */}
                 <button
                     type="button"
                     onClick={() => {
@@ -150,6 +143,7 @@ export default function LoginPage() {
                 >
                     Continue with Google
                 </button>
+
                 <p className="mt-6 text-center text-sm text-gray-500">
                     Don't have an account?{" "}
                     <Link

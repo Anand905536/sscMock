@@ -1,9 +1,11 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
+import { apiRequest } from "@/lib/api";
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -21,26 +23,17 @@ export default function HistoryPage() {
           return;
         }
 
-        const response = await fetch(
-          "http://localhost:5000/api/attempts/my",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert(data.message || "Failed to load history");
-          return;
-        }
+        const data = await apiRequest("/attempts/my", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        });
 
         setAttempts(data);
       } catch (error) {
-        console.error(error);
-        alert("Something went wrong");
+        console.error("Failed to load history:", error);
+        alert(error.message || "Failed to load history");
       } finally {
         setLoading(false);
       }
@@ -52,7 +45,7 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white">
-        <ThreeDots/>
+        <ThreeDots />
       </main>
     );
   }
@@ -146,9 +139,7 @@ export default function HistoryPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      router.push(
-                        `/history/${attempt.attemptId}`
-                      )
+                      router.push(`/history/${attempt.attemptId}`)
                     }
                     className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white"
                   >

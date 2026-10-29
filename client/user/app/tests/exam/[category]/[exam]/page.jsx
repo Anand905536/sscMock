@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Clock, HelpCircle, Award, CheckCircle2, RotateCcw, Play, BookOpen, Layers, Zap } from "lucide-react";
+import { apiRequest } from "@/lib/api";
 
 export default function ExploreExamPage() {
   const router = useRouter();
@@ -49,39 +50,15 @@ export default function ExploreExamPage() {
           Authorization: `Bearer ${token}`,
         };
 
-        const [sectionalResponse, fullLengthResponse, attemptsResponse] =
-          await Promise.all([
-            fetch(
-              `http://localhost:5000/api/tests?${query.toString()}`,
-              { headers }
-            ),
-            fetch(
-              `http://localhost:5000/api/full-length-exams?${query.toString()}`,
-              { headers }
-            ),
-            fetch(
-              `http://localhost:5000/api/full-length-exams/previous`,
-              { headers }
-            ),
-          ]);
 
-        const sectionalData = await sectionalResponse.json();
-        const fullLengthData = await fullLengthResponse.json();
-        const attemptsData = attemptsResponse.ok ? await attemptsResponse.json() : { attempts: [] };
+        const [sectionalData, fullLengthData, attemptsData] = await Promise.all([
+          apiRequest(`/tests?${query.toString()}`, { headers }),
+          apiRequest(`/full-length-exams?${query.toString()}`, { headers }),
+          apiRequest("/full-length-exams/previous", { headers }).catch(() => ({
+            attempts: [],
+          })),
+        ]);
 
-        if (!sectionalResponse.ok) {
-          throw new Error(
-            sectionalData.message ||
-            "Failed to fetch sectional tests"
-          );
-        }
-
-        if (!fullLengthResponse.ok) {
-          throw new Error(
-            fullLengthData.message ||
-            "Failed to fetch full-length exams"
-          );
-        }
 
         const isAttemptStillActive = (attempt) => {
           const status = String(attempt?.status || "")
@@ -207,8 +184,8 @@ export default function ExploreExamPage() {
     activeTab === "mock"
       ? mockTests
       : activeTab === "pyq"
-      ? pyqTests
-      : memoryTests;
+        ? pyqTests
+        : memoryTests;
 
   const handleStartTest = (test) => {
     const testId = test._id || test.id;

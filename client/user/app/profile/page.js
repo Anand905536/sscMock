@@ -1,8 +1,10 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
+import { apiRequest } from "@/lib/api";
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -13,6 +15,7 @@ export default function ProfilePage() {
         email: "",
         avatar: "",
     });
+
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState("");
 
@@ -21,48 +24,52 @@ export default function ProfilePage() {
         newPassword: "",
         confirmPassword: "",
     });
+
     const [loading, setLoading] = useState(true);
     const [savingProfile, setSavingProfile] = useState(false);
     const [savingPassword, setSavingPassword] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
-    const [deleteAccount, setDeleteAccount] = useState(false)
+    const [deleteAccount, setDeleteAccount] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
             try {
                 const token = localStorage.getItem("token");
+
                 if (!token) {
                     router.push("/login");
                     return;
                 }
 
-                const response = await fetch("http://localhost:5000/api/profile", {
+                const data = await apiRequest("/profile", {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
+                    cache: "no-store",
                 });
 
-                const data = await response.json();
-                if (response.ok) {
-                    const userData = data.user || data;
-                    const avatarUrl = userData.profilePicture
-                        ? userData.profilePicture.startsWith("http")
-                            ? userData.profilePicture
-                            : `http://localhost:5000${userData.profilePicture}`
-                        : "";
+                const userData = data.user || data;
 
-                    setUser({
-                        name: userData.name || "",
-                        email: userData.email || "",
-                        avatar: avatarUrl,
-                    });
+                const avatarUrl = userData.profilePicture
+                    ? userData.profilePicture.startsWith("http")
+                        ? userData.profilePicture
+                        : `http://localhost:5000${userData.profilePicture}`
+                    : "";
 
-                    setPreviewUrl(avatarUrl);
-                } else {
-                    alert(data.message || "Failed to load profile");
-                }
+                setUser({
+                    name: userData.name || "",
+                    email: userData.email || "",
+                    avatar: avatarUrl,
+                });
+
+                setPreviewUrl(avatarUrl);
             } catch (error) {
                 console.error("Error fetching profile:", error);
+
+                setMessage({
+                    type: "error",
+                    text: error.message || "Failed to load profile",
+                });
             } finally {
                 setLoading(false);
             }
@@ -71,11 +78,17 @@ export default function ProfilePage() {
         fetchProfile();
     }, [router]);
 
-    // Handle Image Selection & Local Preview
+    // Handle image selection and local preview
     const handleImageChange = (e) => {
-        const file = e.target.files[0];
+        const file = e.target.files?.[0];
+
         if (file) {
+            if (previewUrl.startsWith("blob:")) {
+                URL.revokeObjectURL(previewUrl);
+            }
+
             setSelectedFile(file);
+
             const objectUrl = URL.createObjectURL(file);
             setPreviewUrl(objectUrl);
         }
@@ -83,20 +96,27 @@ export default function ProfilePage() {
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
+
         setSavingProfile(true);
         setMessage({ type: "", text: "" });
 
         try {
             const token = localStorage.getItem("token");
 
+            if (!token) {
+                router.push("/login");
+                return;
+            }
+
             const formData = new FormData();
             formData.append("name", user.name);
             formData.append("email", user.email);
+
             if (selectedFile) {
                 formData.append("avatar", selectedFile);
             }
 
-            const response = await fetch("http://localhost:5000/api/profile", {
+            const data = await apiRequest("/profile", {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -104,28 +124,34 @@ export default function ProfilePage() {
                 body: formData,
             });
 
-            const data = await response.json();
-            if (response.ok) {
-                setMessage({ type: "success", text: "✨ Profile updated successfully!" });
+            setMessage({
+                type: "success",
+                text: "✨ Profile updated successfully!",
+            });
 
-                const updated = data.user || data;
+            const updated = data.user || data;
 
-                if (updated.profilePicture) {
-                    const avatarUrl = updated.profilePicture.startsWith("http")
-                        ? updated.profilePicture
-                        : `http://localhost:5000${updated.profilePicture}`;
+            if (updated.profilePicture) {
+                const avatarUrl = updated.profilePicture.startsWith("http")
+                    ? updated.profilePicture
+                    : `http://localhost:5000${updated.profilePicture}`;
 
-                    setPreviewUrl(avatarUrl);
-                }
+                setUser((prev) => ({
+                    ...prev,
+                    avatar: avatarUrl,
+                }));
 
-                setSelectedFile(null);
-
-            } else {
-                setMessage({ type: "error", text: data.message || "Failed to update profile" });
+                setPreviewUrl(avatarUrl);
             }
+
+            setSelectedFile(null);
         } catch (error) {
-            console.error(error);
-            setMessage({ type: "error", text: "Something went wrong while saving profile" });
+            console.error("Profile update failed:", error);
+
+            setMessage({
+                type: "error",
+                text: error.message || "Failed to update profile",
+            });
         } finally {
             setSavingProfile(false);
         }
@@ -133,8 +159,12 @@ export default function ProfilePage() {
 
     const handlePasswordUpdate = async (e) => {
         e.preventDefault();
+
         if (passwords.newPassword !== passwords.confirmPassword) {
-            setMessage({ type: "error", text: "New passwords do not match!" });
+            setMessage({
+                type: "error",
+                text: "New passwords do not match!",
+            });
             return;
         }
 
@@ -143,10 +173,15 @@ export default function ProfilePage() {
 
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:5000/api/profile/change-password", {
+
+            if (!token) {
+                router.push("/login");
+                return;
+            }
+
+            await apiRequest("/profile/change-password", {
                 method: "PUT",
                 headers: {
-                    "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
@@ -155,18 +190,76 @@ export default function ProfilePage() {
                 }),
             });
 
-            const data = await response.json();
-            if (response.ok) {
-                setMessage({ type: "success", text: "🔒 Password updated successfully!" });
-                setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
-            } else {
-                setMessage({ type: "error", text: data.message || "Failed to update password" });
-            }
+            setMessage({
+                type: "success",
+                text: "🔒 Password updated successfully!",
+            });
+
+            setPasswords({
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+            });
         } catch (error) {
-            console.error(error);
-            setMessage({ type: "error", text: "Something went wrong" });
+            console.error("Password update failed:", error);
+
+            setMessage({
+                type: "error",
+                text: error.message || "Failed to update password",
+            });
         } finally {
             setSavingPassword(false);
+        }
+    };
+
+    const handleDelete = async (e) => {
+        e.preventDefault();
+
+        const confirmed = window.confirm(
+            "Are you sure you want to delete your account? This action may permanently affect your account."
+        );
+
+        if (!confirmed) return;
+
+        setDeleteAccount(true);
+
+        try {
+            const userData = JSON.parse(
+                localStorage.getItem("user") || "{}"
+            );
+
+            const userId = userData.id || userData._id;
+            const token = localStorage.getItem("token");
+
+            if (!userId || !token) {
+                alert("Please log in again.");
+                router.push("/login");
+                return;
+            }
+
+            const data = await apiRequest(
+                `/profile/${userId}/visibility`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            alert(data.message || "Account hidden successfully.");
+
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            localStorage.removeItem("userId");
+
+            router.push("/login");
+        } catch (error) {
+            console.error("Account deletion failed:", error);
+
+            alert(error.message || "Unable to update your account. Please try again.");
+        } finally {
+            setDeleteAccount(false);
         }
     };
 
@@ -175,128 +268,85 @@ export default function ProfilePage() {
             <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
                 <div className="flex flex-col items-center gap-4">
                     <ThreeDots />
-                    <p className="text-sm font-medium text-green-600 animate-pulse">Loading your profile...</p>
+                    <p className="animate-pulse text-sm font-medium text-green-600">
+                        Loading your profile...
+                    </p>
                 </div>
             </main>
         );
     }
 
-    // account deletion
-    const handleDelete = async (e) => {
-        e.preventDefault();
-
-        const confirmed = window.confirm(
-            "Are you sure you want to delete your account? This will delete you account permanently"
-        );
-
-        if (!confirmed) return;
-        setDeleteAccount(true);
-        try {
-            const userData = JSON.parse(localStorage.getItem("user") || "{}");
-            const userId = userData.id;
-            const token = localStorage.getItem("token");
-
-            // console.log("userId from profile delete paeg ", userId, token)
-            if (!userId || !token) {
-                alert("Please log in again.");
-                router.push("/login");
-                return;
-            }
-
-            const response = await fetch(
-                `http://localhost:5000/api/profile/${userId}/visibility`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                alert(data.message || "Failed to delete account.");
-                return;
-            }
-
-            alert(data.message || "Account hidden successfully.");
-
-            // Clear the session and redirect to login.
-            localStorage.removeItem("token");
-            localStorage.removeItem("userId");
-
-            router.push("/login");
-        } catch (error) {
-            console.error("Account deletion failed:", error);
-            alert("Unable to connect to the server. Please try again.");
-        } finally {
-            setDeleteAccount(false);
-        }
-    };
-
     return (
         <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 px-4 py-12">
             <div className="mx-auto max-w-2xl rounded-3xl border border-white/60 bg-white/80 p-8 shadow-xl backdrop-blur-xl sm:p-10">
-
-                {/* Header Banner */}
+                {/* Header */}
                 <div className="mb-8 flex items-center justify-between border-b border-gray-100 pb-6">
                     <div>
-                        <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        <h1 className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
                             My Profile
                         </h1>
-                        <p className="mt-1 text-sm text-gray-500">Customize your account persona and security settings</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Customize your account persona and security settings
+                        </p>
                     </div>
+
                     <button
+                        type="button"
                         onClick={() => router.push("/")}
-                        className="rounded-full bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-200 transition"
+                        className="rounded-full bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-200"
                     >
                         ← Back to Home
                     </button>
                 </div>
 
                 {message.text && (
-                    <div className={`mb-6 p-4 rounded-xl text-sm font-medium shadow-sm transition-all animate-bounce ${message.type === "success"
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : "bg-rose-50 text-rose-700 border border-rose-200"
-                        }`}>
+                    <div
+                        className={`mb-6 rounded-xl border p-4 text-sm font-medium shadow-sm ${
+                            message.type === "success"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-rose-200 bg-rose-50 text-rose-700"
+                        }`}
+                    >
                         {message.text}
                     </div>
                 )}
 
-                {/* Profile Information Form */}
+                {/* Profile Information */}
                 <form onSubmit={handleProfileUpdate} className="space-y-6">
-
-                    {/* Avatar Upload Section */}
-
-
                     <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Full Name</label>
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-600">
+                            Full Name
+                        </label>
                         <input
                             type="text"
                             value={user.name}
-                            onChange={(e) => setUser({ ...user, name: e.target.value })}
+                            onChange={(e) =>
+                                setUser({ ...user, name: e.target.value })
+                            }
                             required
-                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition"
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Email Address</label>
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-600">
+                            Email Address
+                        </label>
                         <input
                             type="email"
                             value={user.email}
-                            onChange={(e) => setUser({ ...user, email: e.target.value })}
+                            onChange={(e) =>
+                                setUser({ ...user, email: e.target.value })
+                            }
                             required
-                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition"
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
                         />
                     </div>
 
                     <button
                         type="submit"
                         disabled={savingProfile}
-                        className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:opacity-95 transition disabled:opacity-50"
+                        className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:opacity-95 disabled:opacity-50"
                     >
                         {savingProfile ? "Saving Profile..." : "Save Profile Changes"}
                     </button>
@@ -304,79 +354,92 @@ export default function ProfilePage() {
 
                 <div className="my-10 border-t border-gray-200/80" />
 
-                {/* Password Change Form */}
+                {/* Password Change */}
                 <form onSubmit={handlePasswordUpdate} className="space-y-6">
-                    <h2 className="text-lg font-extrabold text-gray-800">Security & Password</h2>
+                    <h2 className="text-lg font-extrabold text-gray-800">
+                        Security & Password
+                    </h2>
 
                     <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Current Password</label>
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-600">
+                            Current Password
+                        </label>
                         <input
                             type="password"
                             value={passwords.currentPassword}
-                            onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+                            onChange={(e) =>
+                                setPasswords({
+                                    ...passwords,
+                                    currentPassword: e.target.value,
+                                })
+                            }
                             required
+                            autoComplete="current-password"
                             placeholder="••••••••"
-                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition"
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">New Password</label>
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-600">
+                            New Password
+                        </label>
                         <input
                             type="password"
                             value={passwords.newPassword}
-                            onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                            onChange={(e) =>
+                                setPasswords({
+                                    ...passwords,
+                                    newPassword: e.target.value,
+                                })
+                            }
                             required
+                            autoComplete="new-password"
                             placeholder="••••••••"
-                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition"
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Confirm New Password</label>
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-600">
+                            Confirm New Password
+                        </label>
                         <input
                             type="password"
                             value={passwords.confirmPassword}
-                            onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                            onChange={(e) =>
+                                setPasswords({
+                                    ...passwords,
+                                    confirmPassword: e.target.value,
+                                })
+                            }
                             required
+                            autoComplete="new-password"
                             placeholder="••••••••"
-                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition"
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100"
                         />
                     </div>
-
-
 
                     <button
                         type="submit"
                         disabled={savingPassword}
-                        className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:opacity-95 transition disabled:opacity-50"
+                        className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:opacity-95 disabled:opacity-50"
                     >
                         {savingPassword ? "Updating Password..." : "Update Password"}
                     </button>
-
-
                 </form>
 
-                {/* for deleting account */}
+                {/* Account visibility */}
                 <form onSubmit={handleDelete}>
                     <button
                         type="submit"
                         disabled={deleteAccount}
-                        className=" mt-5 cursor-pointer w-full rounded-xl bg-gradient-to-r from-red-600 to-red-600 py-3 
-                text-sm font-bold text-white shadow-lg shadow-red-200 hover:opacity-95 transition disabled:opacity-50"
+                        className="mt-5 w-full cursor-pointer rounded-xl bg-gradient-to-r from-red-600 to-red-600 py-3 text-sm font-bold text-white shadow-lg shadow-red-200 transition hover:opacity-95 disabled:opacity-50"
                     >
-                        {deleteAccount ? "Deleting..." : "Delete Account "}
+                        {deleteAccount ? "Deleting..." : "Delete Account"}
                     </button>
                 </form>
-
             </div>
-
-
         </main>
     );
 }
-
-
-
-
-

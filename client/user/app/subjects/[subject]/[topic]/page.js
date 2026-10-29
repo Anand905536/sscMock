@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { LayoutGrid, Clock, Play, HelpCircle } from "lucide-react";
 import { ThreeDots } from "react-loader-spinner";
+import { apiRequest } from "@/lib/api";
 
 const topicMap = {
   english: {
@@ -78,21 +79,15 @@ export default function TopicTestsPage() {
           topic: topicName,
         });
 
-        const response = await fetch(
-          `http://localhost:5000/api/tests?${params.toString()}`,
+        const data = await apiRequest(
+          `/tests?${params.toString()}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
+            cache: "no-store",
           }
         );
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to fetch tests"
-          );
-        }
 
         setTests(data);
       } catch (err) {
@@ -162,8 +157,8 @@ export default function TopicTestsPage() {
               <button
                 onClick={() => setActiveCategory("all")}
                 className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${activeCategory === "all"
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
               >
                 All Categories ({tests.length})
@@ -174,8 +169,8 @@ export default function TopicTestsPage() {
                   key={catName}
                   onClick={() => setActiveCategory(catName)}
                   className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${activeCategory === catName
-                      ? "bg-emerald-600 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                 >
                   {catName} ({groupedByCategory[catName].length})

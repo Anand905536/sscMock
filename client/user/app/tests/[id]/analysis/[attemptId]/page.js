@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
+import { apiRequest } from "@/lib/api";
 
 export default function AnalysisPage() {
     const { id, attemptId } = useParams();
@@ -22,27 +23,18 @@ export default function AnalysisPage() {
                     return;
                 }
 
-                const response = await fetch(
-                    `http://localhost:5000/api/attempts/${attemptId}/result`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    alert(data.message || "Failed to load analysis");
-                    router.push(`/tests/${id}/result?attemptId=${attemptId}`);
-                    return;
-                }
-
+                const data = await apiRequest(`/attempts/${attemptId}/result`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
                 setResult(data.result);
+
             } catch (error) {
                 console.error(error);
-                alert("Something went wrong");
+
+                alert(error.message || "Something went wrong");
+                router.push(`/tests/${id}/result?attemptId=${attemptId}`);
             } finally {
                 setLoading(false);
             }
@@ -54,7 +46,7 @@ export default function AnalysisPage() {
     if (loading) {
         return (
             <main className="flex min-h-screen items-center justify-center bg-white">
-               <ThreeDots/>
+                <ThreeDots />
             </main>
         );
     }
@@ -128,10 +120,10 @@ export default function AnalysisPage() {
 
                                         <span
                                             className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${question.status === "correct"
-                                                    ? "bg-green-100 text-green-700"
-                                                    : question.status === "incorrect"
-                                                        ? "bg-red-100 text-red-700"
-                                                        : "bg-gray-100 text-gray-600"
+                                                ? "bg-green-100 text-green-700"
+                                                : question.status === "incorrect"
+                                                    ? "bg-red-100 text-red-700"
+                                                    : "bg-gray-100 text-gray-600"
                                                 }`}
                                         >
                                             {question.status === "correct"
@@ -154,10 +146,10 @@ export default function AnalysisPage() {
                                                 <div
                                                     key={index}
                                                     className={`cursor-pointer rounded-lg border px-4 py-4 text-sm ${isCorrect
-                                                            ? "border-green-300 bg-green-50 text-green-800"
-                                                            : isSelected
-                                                                ? "border-red-300 bg-red-50 text-red-800"
-                                                                : "border-gray-200 text-gray-700"
+                                                        ? "border-green-300 bg-green-50 text-green-800"
+                                                        : isSelected
+                                                            ? "border-red-300 bg-red-50 text-red-800"
+                                                            : "border-gray-200 text-gray-700"
                                                         }`}
                                                 >
                                                     <div className="flex items-center justify-between gap-3">
@@ -248,8 +240,8 @@ export default function AnalysisPage() {
                                             setCurrentQuestion(index)
                                         }
                                         className={`cursor-pointer h-9 rounded-md text-sm font-medium ${index === currentQuestion
-                                                ? "ring-2 ring-black ring-offset-1"
-                                                : ""
+                                            ? "ring-2 ring-black ring-offset-1"
+                                            : ""
                                             } ${question.status === "correct"
                                                 ? "bg-green-100 text-green-700"
                                                 : question.status === "incorrect"

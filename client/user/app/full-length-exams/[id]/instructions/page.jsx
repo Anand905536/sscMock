@@ -4,8 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
 import { Clock, HelpCircle, Layers, Award, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
-
-const API = "http://localhost:5000/api/full-length-exams";
+import { apiRequest } from "@/lib/api";
 
 export default function ExamInstructionsPage() {
     const params = useParams();
@@ -17,7 +16,8 @@ export default function ExamInstructionsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [hasInProgressAttempt, setHasInProgressAttempt] = useState(false);
-    
+
+
 
     useEffect(() => {
         let cancelled = false;
@@ -31,50 +31,79 @@ export default function ExamInstructionsPage() {
                     return;
                 }
 
-                const response = await fetch(`${API}/${examId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    cache: "no-store",
-                });
+                const headers = {
+                    Authorization: `Bearer ${token}`,
+                };
 
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || "Failed to load exam details.");
-                }
+                // Fetch exam details through the centralized API utility.
+                const data = await apiRequest(
+                    `/full-length-exams/${examId}`,
+                    {
+                        headers,
+                        cache: "no-store",
+                    }
+                );
 
                 if (!Array.isArray(data.sections)) {
                     throw new Error("Exam sections could not be loaded.");
                 }
 
-                // If an attempt is already in progress, the user should resume it rather than
-                // being led through a fresh-start flow.
-                const attemptsResponse = await fetch(`${API}/previous`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    cache: "no-store",
-                });
-                if (attemptsResponse.ok) {
-                    const attemptsData = await attemptsResponse.json();
-                    const activeAttempt = (attemptsData.attempts || []).find((item) => {
-                        const attemptExamId = item.exam?._id || item.exam;
-                        return String(attemptExamId) === String(data._id) && item.status === "in-progress";
+                // Fetch previous attempts through the same utility.
+                try {
+                    const attemptsData = await apiRequest("/full-length-exams/previous", {
+                        headers,
+                        cache: "no-store",
                     });
-                    if (!cancelled) setHasInProgressAttempt(Boolean(activeAttempt));
+
+                    const activeAttempt = (
+                        attemptsData?.attempts || []
+                    ).find((item) => {
+                        const attemptExamId = item.exam?._id || item.exam;
+
+                        return (
+                            String(attemptExamId) === String(data._id) &&
+                            item.status === "in-progress"
+                        );
+                    });
+
+                    if (!cancelled) {
+                        setHasInProgressAttempt(Boolean(activeAttempt));
+                    }
+                } catch (attemptError) {
+                    // Preserve the previous behavior: an attempts
+                    // request failure should not prevent exam loading.
+                    console.error(
+                        "Failed to load previous attempts:",
+                        attemptError.message
+                    );
                 }
 
-                if (!cancelled) setExam(data);
+                if (!cancelled) {
+                    setExam(data);
+                }
             } catch (err) {
-                if (!cancelled) setError(err.message);
+                if (!cancelled) {
+                    setError(err.message || "Failed to load exam details.");
+                }
             } finally {
-                if (!cancelled) setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         }
 
-        if (examId) loadExam();
+        if (examId) {
+            loadExam();
+        } else {
+            setError("Exam ID is missing.");
+            setLoading(false);
+        }
 
         return () => {
             cancelled = true;
         };
     }, [examId, router]);
+
 
     if (loading) {
         return (

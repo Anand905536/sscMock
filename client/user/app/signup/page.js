@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { apiRequest } from "@/lib/api";
 
 export default function SignupPage() {
     const router = useRouter();
@@ -36,26 +37,14 @@ export default function SignupPage() {
             setLoading(true);
             setError("");
 
-            const response = await fetch(
-                "http://localhost:5000/api/auth/register",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        name: form.name,
-                        email: form.email,
-                        password: form.password,
-                    }),
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || "Registration failed");
-            }
+            await apiRequest("/auth/register", {
+                method: "POST",
+                body: JSON.stringify({
+                    name: form.name,
+                    email: form.email,
+                    password: form.password,
+                }),
+            });
 
             /*
              * Current backend registration response does not return
@@ -193,8 +182,10 @@ export default function SignupPage() {
                 <button
                     type="button"
                     onClick={() => {
-                        window.location.href =
-                            "http://localhost:5000/api/auth/google";
+                        window.location.href = `${
+                            process.env.NEXT_PUBLIC_API_URL ||
+                            "http://localhost:5000/api"
+                        }/auth/google`;
                     }}
                     className="h-11 w-full rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
                 >

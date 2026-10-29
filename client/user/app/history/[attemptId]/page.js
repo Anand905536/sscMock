@@ -1,7 +1,9 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { apiRequest } from "@/lib/api";
 
 export default function AttemptDetailsPage() {
   const { attemptId } = useParams();
@@ -21,53 +23,40 @@ export default function AttemptDetailsPage() {
           return;
         }
 
-        const resultResponse = await fetch(
-          `http://localhost:5000/api/attempts/${attemptId}/result`,
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+
+        // Fetch attempt result
+        const resultData = await apiRequest(
+          `/attempts/${attemptId}/result`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers,
+            cache: "no-store",
           }
         );
-
-        const resultData = await resultResponse.json();
-
-        if (!resultResponse.ok) {
-          alert(
-            resultData.message ||
-              "Failed to load attempt"
-          );
-          return;
-        }
 
         setResult(resultData.result);
 
-        const testId = resultData.result.test._id;
+        const testId = resultData.result?.test?._id;
 
-        const questionsResponse = await fetch(
-          `http://localhost:5000/api/questions/test/${testId}`,
+        if (!testId) {
+          throw new Error("Test information not found in attempt result");
+        }
+
+        // Fetch questions for this test
+        const questionsData = await apiRequest(
+          `/questions/test/${testId}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers,
+            cache: "no-store",
           }
         );
 
-        const questionsData =
-          await questionsResponse.json();
-
-        if (!questionsResponse.ok) {
-          alert(
-            questionsData.message ||
-              "Failed to load questions"
-          );
-          return;
-        }
-
         setQuestions(questionsData);
       } catch (error) {
-        console.error(error);
-        alert("Something went wrong");
+        console.error("Failed to load attempt details:", error);
+        alert(error.message || "Something went wrong");
       } finally {
         setLoading(false);
       }
@@ -81,9 +70,7 @@ export default function AttemptDetailsPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white">
-        <p className="text-gray-500">
-          Loading attempt...
-        </p>
+        <p className="text-gray-500">Loading attempt...</p>
       </main>
     );
   }
@@ -91,15 +78,12 @@ export default function AttemptDetailsPage() {
   if (!result) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white">
-        <p className="text-gray-500">
-          Attempt not found.
-        </p>
+        <p className="text-gray-500">Attempt not found.</p>
       </main>
     );
   }
 
-  const questionResults =
-    result.questionResults || [];
+  const questionResults = result.questionResults || [];
 
   const resultMap = new Map(
     questionResults.map((item) => [
@@ -120,9 +104,7 @@ export default function AttemptDetailsPage() {
         </button>
 
         <div className="mt-6">
-          <p className="text-sm text-gray-500">
-            Previous Attempt
-          </p>
+          <p className="text-sm text-gray-500">Previous Attempt</p>
 
           <h1 className="mt-1 text-3xl font-bold text-black">
             {result.test.title}
@@ -136,40 +118,28 @@ export default function AttemptDetailsPage() {
         {/* Stats */}
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="rounded-lg border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">
-              Score
-            </p>
-
+            <p className="text-sm text-gray-500">Score</p>
             <p className="mt-2 text-2xl font-semibold text-black">
               {result.score}/{result.maximumMarks}
             </p>
           </div>
 
           <div className="rounded-lg border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">
-              Percentage
-            </p>
-
+            <p className="text-sm text-gray-500">Percentage</p>
             <p className="mt-2 text-2xl font-semibold text-black">
               {result.percentage}%
             </p>
           </div>
 
           <div className="rounded-lg border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">
-              Correct
-            </p>
-
+            <p className="text-sm text-gray-500">Correct</p>
             <p className="mt-2 text-2xl font-semibold text-black">
               {result.correctAnswers}
             </p>
           </div>
 
           <div className="rounded-lg border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">
-              Wrong
-            </p>
-
+            <p className="text-sm text-gray-500">Wrong</p>
             <p className="mt-2 text-2xl font-semibold text-black">
               {result.incorrectAnswers}
             </p>
@@ -178,42 +148,32 @@ export default function AttemptDetailsPage() {
 
         <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
           <div className="rounded-lg border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">
-              Unanswered
-            </p>
-
+            <p className="text-sm text-gray-500">Unanswered</p>
             <p className="mt-2 text-2xl font-semibold text-black">
               {result.unanswered}
             </p>
           </div>
 
           <div className="rounded-lg border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">
-              Rank
-            </p>
-
+            <p className="text-sm text-gray-500">Rank</p>
             <p className="mt-2 text-2xl font-semibold text-black">
               #{result.rank}
             </p>
           </div>
 
           <div className="rounded-lg border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">
-              Percentile
-            </p>
-
+            <p className="text-sm text-gray-500">Percentile</p>
             <p className="mt-2 text-2xl font-semibold text-black">
               {result.percentile}%
             </p>
           </div>
         </div>
 
-        {/* Marking */}
+        {/* Marking Scheme */}
         <div className="mt-6 rounded-lg border border-gray-200 p-5">
           <p className="text-sm font-medium text-black">
             Marking Scheme
           </p>
-
           <p className="mt-2 text-sm text-gray-500">
             +{result.marksPerQuestion} for correct answer
             {" • "}
@@ -229,14 +189,11 @@ export default function AttemptDetailsPage() {
 
           <div className="mt-5 space-y-6">
             {questions.map((question, index) => {
-              const questionResult =
-                resultMap.get(
-                  question._id.toString()
-                );
+              const questionResult = resultMap.get(
+                question._id.toString()
+              );
 
-              const status =
-                questionResult?.status ||
-                "unanswered";
+              const status = questionResult?.status || "unanswered";
 
               return (
                 <div
@@ -245,8 +202,7 @@ export default function AttemptDetailsPage() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <h3 className="font-medium text-black">
-                      {index + 1}.{" "}
-                      {question.questionText}
+                      {index + 1}. {question.questionText}
                     </h3>
 
                     <span
@@ -267,45 +223,40 @@ export default function AttemptDetailsPage() {
                   </div>
 
                   <div className="mt-5 space-y-2">
-                    {question.options.map(
-                      (option) => {
-                        const isCorrect =
-                          option ===
-                          questionResult?.correctAnswer;
+                    {question.options.map((option, optionIndex) => {
+                      const isCorrect =
+                        option === questionResult?.correctAnswer;
 
-                        const isSelected =
-                          option ===
-                          questionResult?.selectedAnswer;
+                      const isSelected =
+                        option === questionResult?.selectedAnswer;
 
-                        return (
-                          <div
-                            key={option}
-                            className={`rounded-lg border p-3 text-sm ${
-                              isCorrect
-                                ? "border-green-500 bg-green-50 text-green-700"
-                                : isSelected
-                                ? "border-red-500 bg-red-50 text-red-700"
-                                : "border-gray-200 text-gray-700"
-                            }`}
-                          >
-                            {option}
+                      return (
+                        <div
+                          key={`${question._id}-${optionIndex}`}
+                          className={`rounded-lg border p-3 text-sm ${
+                            isCorrect
+                              ? "border-green-500 bg-green-50 text-green-700"
+                              : isSelected
+                              ? "border-red-500 bg-red-50 text-red-700"
+                              : "border-gray-200 text-gray-700"
+                          }`}
+                        >
+                          {option}
 
-                            {isCorrect && (
-                              <span className="ml-2 text-xs font-medium">
-                                Correct Answer
-                              </span>
-                            )}
+                          {isCorrect && (
+                            <span className="ml-2 text-xs font-medium">
+                              Correct Answer
+                            </span>
+                          )}
 
-                            {isSelected &&
-                              !isCorrect && (
-                                <span className="ml-2 text-xs font-medium">
-                                  Your Answer
-                                </span>
-                              )}
-                          </div>
-                        );
-                      }
-                    )}
+                          {isSelected && !isCorrect && (
+                            <span className="ml-2 text-xs font-medium">
+                              Your Answer
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );

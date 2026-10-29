@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { apiRequest } from "@/lib/api";
 
 export default function GoogleOneTap() {
     useEffect(() => {
@@ -20,35 +21,26 @@ export default function GoogleOneTap() {
             }
 
             try {
-                const result = await fetch(
-                    "http://localhost:5000/api/auth/google/one-tap",
-                    {
+
+                let data;
+
+                try {
+                    data = await apiRequest("/auth/google/one-tap", {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
                         body: JSON.stringify({
                             credential: response.credential,
                         }),
-                    }
-                );
-
-                const data = await result.json();
-
-                if (!result.ok) {
+                    });
+                } catch (error) {
                     console.error(
                         "Google One Tap backend error:",
-                        data.message
+                        error.message
                     );
                     return;
                 }
 
                 localStorage.setItem("token", data.token);
-                localStorage.setItem(
-                    "user",
-                    JSON.stringify(data.user)
-                );
-
+                localStorage.setItem("user",JSON.stringify(data.user));
                 window.location.replace("/");
             } catch (error) {
                 console.error(
