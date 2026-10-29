@@ -1,5 +1,5 @@
 const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    process.env.NEXT_PUBLIC_API_URL ;
 
 export const apiRequest = async (endpoint, options = {}) => {
     const url = `${API_URL.replace(/\/+$/, "")}/${endpoint.replace(/^\/+/, "")}`;
