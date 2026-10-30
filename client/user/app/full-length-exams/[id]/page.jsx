@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
 import { apiRequest } from "@/lib/api";
@@ -37,6 +37,8 @@ export default function FullLengthExamPage() {
 
     const startAttemptPromiseRef = useRef(null)
     const writeQueueRef = useRef(Promise.resolve());
+    const answerSaveVersionRef = useRef({});
+    const failedAnswerSavesRef = useRef({});
 
     const enqueueWrite = useCallback((operation) => {
         const pending = writeQueueRef.current.then(operation, operation);
@@ -129,6 +131,10 @@ export default function FullLengthExamPage() {
         try {
             // 1. Force clear any pending writes/saves before submitting
             await writeQueueRef.current;
+
+            if (Object.keys(failedAnswerSavesRef.current).length > 0) {
+                throw new Error("Some answers could not be saved. Please revisit and save them before submitting.");
+            }
 
             const data = await apiRequest(
                 `/full-length-exams/attempts/${attemptId}/submit`,
@@ -418,6 +424,51 @@ export default function FullLengthExamPage() {
         return () => clearTimeout(timer);
     }, [secondsLeft, exam, attemptId, sectionIndex, submitting, submitExam, isPaused]);
 
+    // These summaries do not depend on the countdown, so memoize them to avoid
+    // recalculating every question on each one-second timer render.
+    const sectionSummary = useMemo(() => (exam?.sections || []).map((section, sIndex) => {
+        const totalQ = section.questions.length;
+        let attemptedQ = 0;
+        let markedQ = 0;
+
+        for (let qIndex = 0; qIndex < totalQ; qIndex += 1) {
+            const key = `${sIndex}-${qIndex}`;
+            const answer = savedAnswers[key];
+            if (answer !== undefined && answer !== "") attemptedQ += 1;
+            if (markedForReview[key]) markedQ += 1;
+        }
+
+        return {
+            name: section.name,
+            totalQuestions: totalQ,
+            attemptedQuestions: attemptedQ,
+            markedQuestions: markedQ,
+            leftQuestions: totalQ - attemptedQ,
+        };
+    }), [exam?.sections, savedAnswers, markedForReview]);
+
+    const totalQuestionsCount = sectionSummary.reduce((sum, section) => sum + section.totalQuestions, 0);
+    const totalAttemptedCount = sectionSummary.reduce((sum, section) => sum + section.attemptedQuestions, 0);
+    const totalMarkedCount = sectionSummary.reduce((sum, section) => sum + section.markedQuestions, 0);
+    const totalLeftCount = totalQuestionsCount - totalAttemptedCount;
+
+    const questions = currentSection?.questions || [];
+    const { answeredQuestionsCount, markedCount } = useMemo(() => {
+        let answered = 0;
+        let marked = 0;
+
+        for (let qIndex = 0; qIndex < questions.length; qIndex += 1) {
+            const key = `${sectionIndex}-${qIndex}`;
+            const answer = savedAnswers[key];
+            if (answer !== undefined && answer !== "") answered += 1;
+            if (markedForReview[key]) marked += 1;
+        }
+
+        return { answeredQuestionsCount: answered, markedCount: marked };
+    }, [currentSection?.questions, sectionIndex, savedAnswers, markedForReview]);
+
+    const notAnsweredQuestionsCount = questions.length - answeredQuestionsCount;
+
     if (loading) {
         return (
             <main className="flex justify-center p-8">
@@ -459,40 +510,8 @@ export default function FullLengthExamPage() {
     const answerKey = `${sectionIndex}-${questionIndex}`;
     const selectedAnswerIndex = answers[answerKey];
     const isCurrentMarked = !!markedForReview[answerKey];
-    const questions = currentSection.questions;
 
-    const sectionSummary = exam.sections.map((section, sIndex) => {
-        const totalQ = section.questions.length;
-        const attemptedQ = section.questions.reduce((count, _, qIndex) => {
-            const ans = savedAnswers[`${sIndex}-${qIndex}`];
-            return count + (ans !== undefined && ans !== "" ? 1 : 0);
-        }, 0);
-        const markedQ = section.questions.reduce((count, _, qIndex) => {
-            return count + (markedForReview[`${sIndex}-${qIndex}`] ? 1 : 0);
-        }, 0);
-        const leftQ = totalQ - attemptedQ;
 
-        return {
-            name: section.name,
-            totalQuestions: totalQ,
-            attemptedQuestions: attemptedQ,
-            markedQuestions: markedQ,
-            leftQuestions: leftQ,
-        };
-    });
-
-    const totalQuestionsCount = sectionSummary.reduce((sum, s) => sum + s.totalQuestions, 0);
-    const totalAttemptedCount = sectionSummary.reduce((sum, s) => sum + s.attemptedQuestions, 0);
-    const totalMarkedCount = sectionSummary.reduce((sum, s) => sum + s.markedQuestions, 0);
-    const totalLeftCount = totalQuestionsCount - totalAttemptedCount;
-
-    const answeredQuestionsCount = questions.filter((_, qIndex) => {
-        const ans = savedAnswers[`${sectionIndex}-${qIndex}`];
-        return ans !== undefined && ans !== "";
-    }).length;
-
-    const notAnsweredQuestionsCount = questions.length - answeredQuestionsCount;
-    const markedCount = questions.filter((_, qIndex) => !!markedForReview[`${sectionIndex}-${qIndex}`]).length;
 
 
     // Reusable Palette & Sidebar Content
@@ -744,39 +763,52 @@ export default function FullLengthExamPage() {
 
                         <button
                             type="button"
-                            onClick={async () => {
+                            onClick={() => {
                                 const selectedIdx = answers[answerKey];
                                 const optionText =
                                     selectedIdx !== undefined && selectedIdx !== null && selectedIdx !== ""
                                         ? currentQuestion.options[selectedIdx]
                                         : "";
+                                const previousSavedAnswer = savedAnswers[answerKey];
+                                const saveVersion = (answerSaveVersionRef.current[answerKey] || 0) + 1;
+                                answerSaveVersionRef.current[answerKey] = saveVersion;
 
-                                try {
-                                    await saveCommittedAnswer(sectionIndex, questionIndex, optionText);
-                                } catch (saveError) {
-                                    setError(saveError.message || "Unable to save answer.");
-                                    return;
-                                }
+                                // Update the palette immediately; network persistence continues
+                                // in the background so Save & Next never waits for the API.
+                                setSavedAnswers((previous) => {
+                                    const next = { ...previous };
+                                    if (optionText) next[answerKey] = optionText;
+                                    else delete next[answerKey];
+                                    return next;
+                                });
 
-                                // Keep the review flag when saving/navigating. The palette
-                                // will show yellow for saved + review, and red for review
-                                // without a committed answer.
+                                saveCommittedAnswer(sectionIndex, questionIndex, optionText)
+                                    .then(() => {
+                                        if (answerSaveVersionRef.current[answerKey] === saveVersion) {
+                                            delete failedAnswerSavesRef.current[answerKey];
+                                        }
+                                    })
+                                    .catch((saveError) => {
+                                        console.error("Answer save failed:", saveError);
+                                        failedAnswerSavesRef.current[answerKey] = true;
+                                        setError(saveError.message || "Unable to save answer.");
 
-                                if (optionText) {
-                                    setSavedAnswers((prev) => ({
-                                        ...prev,
-                                        [answerKey]: optionText,
-                                    }));
-                                } else {
-                                    setSavedAnswers((prev) => {
-                                        const copy = { ...prev };
-                                        delete copy[answerKey];
-                                        return copy;
+                                        // Do not roll back a newer selection/save for this question.
+                                        if (answerSaveVersionRef.current[answerKey] !== saveVersion) return;
+
+                                        setSavedAnswers((previous) => {
+                                            const next = { ...previous };
+                                            if (previousSavedAnswer !== undefined) {
+                                                next[answerKey] = previousSavedAnswer;
+                                            } else {
+                                                delete next[answerKey];
+                                            }
+                                            return next;
+                                        });
                                     });
-                                }
 
                                 if (questionIndex < questions.length - 1) {
-                                    setQuestionIndex((prev) => prev + 1);
+                                    setQuestionIndex((previous) => previous + 1);
                                 } else {
                                     setShowLastQuestionModal(true);
                                 }

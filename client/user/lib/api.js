@@ -13,7 +13,6 @@ export const apiRequest = async (endpoint, options = {}) => {
         ...options.headers,
     };
 
-    // FormData ke liye browser ko Content-Type boundary set karne do.
     if (isFormData) {
         delete headers["Content-Type"];
         delete headers["content-type"];
