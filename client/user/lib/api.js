@@ -1,5 +1,8 @@
-const API_URL =
-    process.env.NEXT_PUBLIC_API_URL ;
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+export const GOOGLE_LOGIN_URL =
+    `${API_URL.replace(/\/+$/, "")}/auth/google`;
 
 export const apiRequest = async (endpoint, options = {}) => {
     const url = `${API_URL.replace(/\/+$/, "")}/${endpoint.replace(/^\/+/, "")}`;

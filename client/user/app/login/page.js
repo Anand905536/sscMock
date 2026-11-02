@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, GOOGLE_LOGIN_URL } from "@/lib/api";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -135,8 +135,7 @@ export default function LoginPage() {
                 <button
                     type="button"
                     onClick={() => {
-                        window.location.href =
-                            "http://localhost:5000/api/auth/google";
+                        window.location.href = GOOGLE_LOGIN_URL;
                     }}
                     className="cursor-pointer h-11 w-full rounded-xl border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-sm font-medium text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"
                 >
