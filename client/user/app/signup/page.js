@@ -46,10 +46,6 @@ export default function SignupPage() {
                 }),
             });
 
-            /*
-             * Current backend registration response does not return
-             * a JWT token, so send the user to login after signup.
-             */
             router.push("/login");
         } catch (err) {
             setError(err.message || "Registration failed");
@@ -59,27 +55,27 @@ export default function SignupPage() {
     };
 
     return (
-        <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
-            <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+        <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-zinc-950 px-6 transition-colors duration-300">
+            <div className="w-full max-w-md rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 shadow-sm dark:shadow-zinc-950/40">
                 <div className="mb-8 text-center">
                     <Link
                         href="/"
-                        className="text-2xl font-bold tracking-tight text-black"
+                        className="text-2xl font-extrabold tracking-tight text-black dark:text-white"
                     >
-                        sscMock
+                        SubjectWise
                     </Link>
 
-                    <h1 className="mt-6 text-2xl font-bold text-black">
+                    <h1 className="mt-6 text-2xl font-bold text-black dark:text-white">
                         Create your account
                     </h1>
 
-                    <p className="mt-2 text-sm text-gray-500">
-                        Start your preparation with sscMock.
+                    <p className="mt-2 text-sm text-gray-500 dark:text-zinc-400">
+                        Start your preparation with SubjectWise.
                     </p>
                 </div>
 
                 {error && (
-                    <div className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                    <div className="mb-5 rounded-xl border border-red-200 dark:border-rose-900/50 bg-red-50 dark:bg-rose-950/30 p-3.5 text-sm text-red-600 dark:text-rose-400">
                         {error}
                     </div>
                 )}
@@ -88,7 +84,7 @@ export default function SignupPage() {
                     <div>
                         <label
                             htmlFor="name"
-                            className="mb-2 block text-sm font-medium text-gray-700"
+                            className="mb-2 block text-sm font-medium text-gray-700 dark:text-zinc-300"
                         >
                             Name
                         </label>
@@ -99,7 +95,7 @@ export default function SignupPage() {
                             value={form.name}
                             onChange={handleChange}
                             required
-                            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-black"
+                            className="h-11 w-full rounded-xl border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3.5 text-sm text-black dark:text-white outline-none focus:border-emerald-500 transition"
                             placeholder="Your name"
                         />
                     </div>
@@ -107,7 +103,7 @@ export default function SignupPage() {
                     <div>
                         <label
                             htmlFor="email"
-                            className="mb-2 block text-sm font-medium text-gray-700"
+                            className="mb-2 block text-sm font-medium text-gray-700 dark:text-zinc-300"
                         >
                             Email
                         </label>
@@ -119,7 +115,7 @@ export default function SignupPage() {
                             value={form.email}
                             onChange={handleChange}
                             required
-                            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-black"
+                            className="h-11 w-full rounded-xl border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3.5 text-sm text-black dark:text-white outline-none focus:border-emerald-500 transition"
                             placeholder="you@example.com"
                         />
                     </div>
@@ -127,7 +123,7 @@ export default function SignupPage() {
                     <div>
                         <label
                             htmlFor="password"
-                            className="mb-2 block text-sm font-medium text-gray-700"
+                            className="mb-2 block text-sm font-medium text-gray-700 dark:text-zinc-300"
                         >
                             Password
                         </label>
@@ -139,7 +135,7 @@ export default function SignupPage() {
                             value={form.password}
                             onChange={handleChange}
                             required
-                            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-black"
+                            className="h-11 w-full rounded-xl border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3.5 text-sm text-black dark:text-white outline-none focus:border-emerald-500 transition"
                             placeholder="••••••••"
                         />
                     </div>
@@ -147,7 +143,7 @@ export default function SignupPage() {
                     <div>
                         <label
                             htmlFor="confirmPassword"
-                            className="mb-2 block text-sm font-medium text-gray-700"
+                            className="mb-2 block text-sm font-medium text-gray-700 dark:text-zinc-300"
                         >
                             Confirm Password
                         </label>
@@ -159,7 +155,7 @@ export default function SignupPage() {
                             value={form.confirmPassword}
                             onChange={handleChange}
                             required
-                            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-black"
+                            className="h-11 w-full rounded-xl border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3.5 text-sm text-black dark:text-white outline-none focus:border-emerald-500 transition"
                             placeholder="••••••••"
                         />
                     </div>
@@ -167,36 +163,23 @@ export default function SignupPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="h-11 w-full rounded-md bg-black text-sm font-medium text-white disabled:opacity-50"
+                        className="cursor-pointer h-11 w-full rounded-xl bg-emerald-600 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition-all"
                     >
                         {loading ? "Creating account..." : "Create Account"}
                     </button>
                 </form>
 
                 <div className="my-6 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-gray-200" />
-                    <span className="text-xs text-gray-400">OR</span>
-                    <div className="h-px flex-1 bg-gray-200" />
+                    <div className="h-px flex-1 bg-gray-200 dark:bg-zinc-800" />
+                    <span className="text-xs text-gray-400 dark:text-zinc-500">OR</span>
+                    <div className="h-px flex-1 bg-gray-200 dark:bg-zinc-800" />
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => {
-                        window.location.href = `${
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            "http://localhost:5000/api"
-                        }/auth/google`;
-                    }}
-                    className="h-11 w-full rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
-                >
-                    Continue with Google
-                </button>
-
-                <p className="mt-6 text-center text-sm text-gray-500">
+                <p className="mt-6 text-center text-sm text-gray-500 dark:text-zinc-400">
                     Already have an account?{" "}
                     <Link
                         href="/login"
-                        className="font-medium text-black hover:underline"
+                        className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
                     >
                         Login
                     </Link>

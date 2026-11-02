@@ -1,7 +1,9 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ThreeDots } from "react-loader-spinner";
+import { useTheme } from "@/context/ThemeContext";
 import {
     Award,
     CheckCircle2,
@@ -15,10 +17,9 @@ import {
     Target,
     Activity,
     Trophy,
-    Percent
+    Percent,
 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
-
 
 export default function ResultPage() {
     const params = useParams() || {};
@@ -32,6 +33,8 @@ export default function ResultPage() {
     const [attempts, setAttempts] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
+    const { darkMode, isThemeReady } = useTheme();
+
 
     useEffect(() => {
         const fetchResult = async () => {
@@ -100,6 +103,7 @@ export default function ResultPage() {
                     return;
                 }
                 setResult(data.result);
+                console.log("data from result page", data.result)
 
                 let historyData = null;
 
@@ -171,12 +175,16 @@ export default function ResultPage() {
         fetchResult();
     }, [attemptId, id, router]);
 
+    if (!isThemeReady) {
+        return <main className="theme-loading" />;
+    }
+
     if (loading) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-slate-50">
+            <main className={`flex min-h-screen items-center justify-center ${darkMode ? "bg-zinc-950 text-white" : "bg-slate-50 text-slate-800"}`}>
                 <div className="flex flex-col items-center gap-4">
-                    <ThreeDots color="#059669" height={70} width={70} />
-                    <p className="text-sm font-semibold text-slate-500 animate-pulse">Loading comprehensive result metrics...</p>
+                    <ThreeDots color={darkMode ? "#10b981" : "#059669"} height={70} width={70} />
+                    <p className="text-sm font-semibold animate-pulse opacity-80">Loading comprehensive result metrics...</p>
                 </div>
             </main>
         );
@@ -184,14 +192,15 @@ export default function ResultPage() {
 
     if (!result) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-                <div className="text-center p-8 bg-white rounded-3xl shadow-xl border border-slate-200 max-w-md mx-auto">
+            <main className={`flex min-h-screen items-center justify-center p-4 ${darkMode ? "bg-zinc-950 text-white" : "bg-slate-50 text-slate-800"}`}>
+                <div className={`text-center p-8 rounded-3xl max-w-md mx-auto ${darkMode ? "bg-zinc-900 shadow-2xl" : "bg-white shadow-xl border border-slate-200"}`}>
                     <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                         <XCircle className="w-7 h-7" />
                     </div>
-                    <h2 className="text-xl font-bold text-slate-900">Result Not Found</h2>
-                    <p className="mt-2 text-sm text-slate-500">{errorMessage || "We couldn't retrieve the details for this test attempt."}</p>
+                    <h2 className="text-xl font-bold">Result Not Found</h2>
+                    <p className={`mt-2 text-sm ${darkMode ? "text-zinc-400" : "text-slate-500"}`}>{errorMessage || "We couldn't retrieve the details for this test attempt."}</p>
                     <button
+                        type="button"
                         onClick={() => router.push("/")}
                         className="mt-6 w-full py-3 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/20 cursor-pointer"
                     >
@@ -202,6 +211,8 @@ export default function ResultPage() {
         );
     }
 
+
+    // console.log("result",result)
     const totalQ = result.totalQuestions || (result.correctAnswers + result.incorrectAnswers + result.unanswered);
     const correctCount = result.correctAnswers || 0;
     const incorrectCount = result.incorrectAnswers || 0;
@@ -212,26 +223,62 @@ export default function ResultPage() {
     const attemptDisplayNum = currentAttemptIndex !== -1 ? attempts.length - currentAttemptIndex : 1;
 
     return (
-        <main className="min-h-screen bg-slate-50/60 text-slate-800 pb-20 font-sans">
-            <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-6">
+        <main className={`min-h-screen flex flex-col justify-between transition-colors duration-300 ${darkMode
+            ? "bg-zinc-950 text-zinc-100 selection:bg-emerald-500 selection:text-white"
+            : "bg-gray-50/70 text-gray-900 selection:bg-emerald-500 selection:text-white"
+            }`}>
+            {/* Top Navigation Bar with Dark Mode Toggle */}
+            <header className={`sticky top-0 z-40 flex h-16 items-center justify-between px-6 backdrop-blur-md shadow-xs transition-colors duration-300 ${darkMode ? "bg-zinc-900/90 text-white" : "border-b border-gray-200 bg-white/90 text-gray-900"
+                }`}>
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => router.push("/")}
+                        className={`cursor-pointer flex items-center gap-2 text-xs font-bold transition-colors ${darkMode ? "text-zinc-300 hover:text-white" : "text-gray-700 hover:text-gray-900"}`}
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Home</span>
+                    </button>
+                </div>
+
+                {/* <div className="flex items-center gap-3"> */}
+                {/* Theme Toggle Button */}
+                {/* <button
+                        type="button"
+                        onClick={() => setDarkMode(!darkMode)}
+                        className={`cursor-pointer flex items-center justify-center h-9 w-9 rounded-lg transition-all ${
+                            darkMode 
+                                ? "bg-zinc-800 text-amber-400 hover:bg-zinc-700" 
+                                : "border border-gray-300 bg-white text-slate-700 hover:bg-gray-100 shadow-xs"
+                        }`}
+                        title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                    </button> */}
+                {/* </div> */}
+            </header>
+
+            <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-6 w-full flex-1">
 
                 {/* Compact, Sleek Header Banner */}
-                <div className="rounded-2xl bg-white border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className={`rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-300 ${darkMode ? "bg-zinc-900 text-zinc-100" : "border border-gray-200 bg-white text-gray-900"
+                    }`}>
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] uppercase tracking-wider border border-emerald-200/60">
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-[11px] uppercase tracking-wider ${darkMode ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                                }`}>
                                 {result.test?.category || "Govt Exam Mock Test"}
                             </span>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-xs font-semibold text-slate-500">
-                                Status: <strong className="text-slate-700 uppercase">{(result.status || "completed")}</strong>
+                            <span className="opacity-40">•</span>
+                            <span className={`text-xs font-semibold ${darkMode ? "text-zinc-400" : "text-slate-500"}`}>
+                                Status: <strong className={`uppercase ${darkMode ? "text-white" : "text-slate-700"}`}>{(result.status || "completed")}</strong>
                             </span>
                         </div>
-                        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+                        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
                             {result.test?.title || "Exam Result Summary"}
                         </h1>
-                        <p className="text-xs text-slate-500 flex items-center gap-1.5 pt-0.5">
-                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        <p className={`text-xs flex items-center gap-1.5 pt-0.5 ${darkMode ? "text-zinc-400" : "text-slate-500"}`}>
+                            <Clock className="w-3.5 h-3.5 opacity-70" />
                             Completed on: {new Date(result.completedAt || Date.now()).toLocaleString()}
                         </p>
                     </div>
@@ -248,14 +295,15 @@ export default function ResultPage() {
                     </div>
                 </div>
 
-                {/* Attempt History Selector Bar (with attempt number, marks, and timestamp) */}
+                {/* Attempt History Selector Bar */}
                 {attempts.length > 0 && (
-                    <div className="rounded-2xl bg-white border border-slate-200/80 px-5 py-3 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className={`rounded-2xl px-5 py-3 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors duration-300 ${darkMode ? "bg-zinc-900 text-zinc-100" : "border border-gray-200 bg-white text-gray-900"
+                        }`}>
                         <div className="flex items-center gap-2.5">
-                            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                            <div className={`p-2 rounded-lg ${darkMode ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-50 text-emerald-600"}`}>
                                 <RotateCcw className="w-4 h-4" />
                             </div>
-                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Attempt Switcher ({attempts.length})</span>
+                            <span className="text-xs font-bold uppercase tracking-wider">Attempt Switcher ({attempts.length})</span>
                         </div>
                         <div className="w-full sm:w-80">
                             <select
@@ -264,7 +312,10 @@ export default function ResultPage() {
                                     const selectedVal = event.target.value;
                                     router.push(`/tests/${id}/result?attemptId=${selectedVal}`);
                                 }}
-                                className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-800 outline-none focus:border-emerald-500 transition cursor-pointer"
+                                className={`w-full h-10 rounded-xl px-3 text-xs font-bold outline-none transition cursor-pointer ${darkMode
+                                    ? "bg-zinc-950 text-white focus:ring-1 focus:ring-emerald-500"
+                                    : "border border-slate-200 bg-slate-50 text-slate-800 focus:border-emerald-500"
+                                    }`}
                             >
                                 {attempts.map((attempt, index) => {
                                     const attNum = attempts.length - index;
@@ -280,120 +331,83 @@ export default function ResultPage() {
                     </div>
                 )}
 
-                {/* Clean Individual Cards Grid */}
+                {/* Clean Individual Cards Grid (No borders in dark mode) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
                     {/* Card 1: Final Score */}
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2 flex flex-col justify-between">
+                    <div className={`rounded-2xl p-5 shadow-sm space-y-2 flex flex-col justify-between transition-colors duration-300 ${darkMode ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40" : "border border-gray-200 bg-white text-gray-900"
+                        }`}>
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Final Score</span>
-                            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><Trophy className="w-4 h-4" /></div>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${darkMode ? "text-zinc-400" : "text-slate-400"}`}>Final Score</span>
+                            <div className={`p-2 rounded-xl ${darkMode ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-50 text-emerald-600"}`}><Trophy className="w-4 h-4" /></div>
                         </div>
                         <div>
-                            <div className="text-3xl font-black text-slate-900">{result.score} <span className="text-lg font-bold text-slate-400">/{result.maximumMarks}</span></div>
-                            <p className="text-xs font-bold text-emerald-600 mt-1">{result.percentage}% Overall Score</p>
+                            <div className="text-3xl font-black">{result.score} <span className={`text-lg font-bold ${darkMode ? "text-zinc-500" : "text-slate-400"}`}>/{result.maximumMarks}</span></div>
+                            <p className="text-xs font-bold text-emerald-500 mt-1">{result.percentage}% Overall Score</p>
                         </div>
-                        <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100 flex justify-between">
+                        <div className={`text-[11px] pt-2 flex justify-between ${darkMode ? "border-t border-zinc-800 text-zinc-400" : "border-t border-slate-100 text-slate-400"}`}>
                             <span>+{result.marksPerQuestion} Correct</span>
-                            <span className="text-rose-600">-{result.negativeMarks} Wrong</span>
+                            <span className="text-rose-500">-{result.negativeMarks} Wrong</span>
                         </div>
                     </div>
 
-                    {/* Card 2: Rank & Percentile */}
-                    {/* <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2 flex flex-col justify-between">
+                    {/* Card 2: Accuracy Rate */}
+                    <div className={`rounded-2xl p-5 shadow-sm space-y-2 flex flex-col justify-between transition-colors duration-300 ${darkMode ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40" : "border border-gray-200 bg-white text-gray-900"
+                        }`}>
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Standing & Percentile</span>
-                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><Zap className="w-4 h-4" /></div>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${darkMode ? "text-zinc-400" : "text-slate-400"}`}>Accuracy & Attempted</span>
+                            <div className={`p-2 rounded-xl ${darkMode ? "bg-teal-500/15 text-teal-400" : "bg-teal-50 text-teal-600"}`}><Target className="w-4 h-4" /></div>
                         </div>
                         <div>
-                            <div className="text-3xl font-black text-slate-900">{result.rank}</div>
-                            <p className="text-xs font-bold text-indigo-600 mt-1">Top {result.percentile}% Candidates</p>
+                            <div className="text-3xl font-black">{Math.round((correctCount / (totalQ || 1)) * 100)}%</div>
+                            <p className="text-xs font-bold text-teal-500 mt-1">{correctCount} of {totalQ} questions correct</p>
                         </div>
-                        <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100">
-                            Compared to {result.totalCandidates} total applicants
-                        </div>
-                    </div> */}
-
-                    {/* Card 3: Accuracy Rate */}
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2 flex flex-col justify-between">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Accuracy & Attempted</span>
-                            <div className="p-2 bg-teal-50 text-teal-600 rounded-xl"><Target className="w-4 h-4" /></div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-black text-slate-900">{Math.round((correctCount / (totalQ || 1)) * 100)}%</div>
-                            <p className="text-xs font-bold text-teal-600 mt-1">{correctCount} of {totalQ} questions correct</p>
-                        </div>
-                        <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100 flex justify-between">
+                        <div className={`text-[11px] pt-2 flex justify-between ${darkMode ? "border-t border-zinc-800 text-zinc-400" : "border-t border-slate-100 text-slate-400"}`}>
                             <span>Attempted: {correctCount + incorrectCount}</span>
                             <span>Skipped: {unansweredCount}</span>
                         </div>
                     </div>
 
-                    {/* Card 4: Question Breakdown Summary */}
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2 flex flex-col justify-between">
+                    {/* Card 3: Question Breakdown Summary */}
+                    <div className={`rounded-2xl p-5 shadow-sm space-y-2 flex flex-col justify-between transition-colors duration-300 ${darkMode ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40" : "border border-gray-200 bg-white text-gray-900"
+                        }`}>
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Answers Breakdown</span>
-                            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><Activity className="w-4 h-4" /></div>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${darkMode ? "text-zinc-400" : "text-slate-400"}`}>Answers Breakdown</span>
+                            <div className={`p-2 rounded-xl ${darkMode ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-600"}`}><Activity className="w-4 h-4" /></div>
                         </div>
                         <div className="space-y-1.5 py-1">
                             <div className="flex justify-between text-xs font-bold">
-                                <span className="text-emerald-600 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Correct</span>
+                                <span className="text-emerald-500 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Correct</span>
                                 <span>{correctCount}</span>
                             </div>
                             <div className="flex justify-between text-xs font-bold">
-                                <span className="text-rose-600 flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Incorrect</span>
+                                <span className="text-rose-500 flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Incorrect</span>
                                 <span>{incorrectCount}</span>
                             </div>
                             <div className="flex justify-between text-xs font-bold">
-                                <span className="text-slate-500 flex items-center gap-1"><HelpCircle className="w-3.5 h-3.5" /> Unanswered</span>
+                                <span className={darkMode ? "text-zinc-400 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}><HelpCircle className="w-3.5 h-3.5" /> Unanswered</span>
                                 <span>{unansweredCount}</span>
                             </div>
                         </div>
-                        <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100">
+                        <div className={`text-[11px] pt-2 ${darkMode ? "border-t border-zinc-800 text-zinc-400" : "border-t border-slate-100 text-slate-400"}`}>
                             Total Questions: {totalQ}
                         </div>
                     </div>
 
                 </div>
 
-                {/* Score Range Distribution Card */}
-                {/* <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Score Brackets & Candidate Distribution</h3>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                        {result.marksDistribution?.map((item, idx) => (
-                            <div key={idx} className="rounded-xl border border-slate-200/60 bg-slate-50 p-4 text-center space-y-1">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">{item.range} Marks</span>
-                                <span className="text-xl font-black text-slate-900 block">{item.students}</span>
-                                <span className="text-[10px] text-slate-400 font-medium">candidates</span>
-                            </div>
-                        ))}
-                    </div>
-                </div> */}
-
                 {/* Bottom Navigation Actions */}
                 <div className="flex flex-col sm:flex-row gap-4 pt-2">
                     <button
                         type="button"
                         onClick={() => router.push("/")}
-                        className="cursor-pointer flex-1 rounded-2xl border border-slate-300 bg-white hover:bg-slate-50 px-6 py-4 text-xs font-bold text-slate-700 shadow-sm transition text-center flex items-center justify-center gap-2"
+                        className={`cursor-pointer flex-1 rounded-2xl px-6 py-4 text-xs font-bold shadow-sm transition text-center flex items-center justify-center gap-2 ${darkMode
+                            ? "bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
+                            : "border border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
+                            }`}
                     >
                         <ArrowLeft className="w-4 h-4" /> Back to Home
                     </button>
-
-                    {/* <button
-                        type="button"
-                        onClick={() => {
-                            const subject = result.test?.subject?.toLowerCase() || "english";
-                            const topic = result.test?.topic || "";
-                            router.push(`/subjects/${subject}/${topic}`);
-                        }}
-                        className="cursor-pointer flex-1 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-6 py-4 text-xs font-bold text-white shadow-md transition text-center flex items-center justify-center gap-2"
-                    >
-                        <span>Try Another Test</span>
-                        <ChevronRight className="w-4 h-4" />
-                    </button> */}
                 </div>
 
             </div>

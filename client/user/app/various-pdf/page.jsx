@@ -1,8 +1,11 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
+import { FileText, Download } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 
 function UserPdfPanel() {
   const [pdfs, setPdfs] = useState([]);
@@ -11,16 +14,20 @@ function UserPdfPanel() {
 
   const router = useRouter();
 
+  // Get global theme from ThemeContext
+  const { darkMode, isThemeReady } = useTheme();
+
+  // Fetch PDFs
   useEffect(() => {
     const fetchPdfs = async () => {
-      setLoading(true);
-
       const token = localStorage.getItem("token");
 
       if (!token) {
         router.push("/login");
         return;
       }
+
+      setLoading(true);
 
       try {
         const data = await apiRequest("/pdfs/get-pdfs", {
@@ -47,138 +54,168 @@ function UserPdfPanel() {
     fetchPdfs();
   }, [router]);
 
+  // Filter PDFs
   const filteredPdfs = pdfs.filter((pdf) =>
-    pdf.title.toLowerCase().includes(searchQuery.toLowerCase())
+    (pdf.title || "")
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
   );
 
-  return (
-    <div
-      style={{
-        padding: "20px",
-        background: "#0f172a",
-        minHeight: "100vh",
-        color: "#fff",
-      }}
-    >
-      <h2>Study Materials &amp; PDFs</h2>
+  // Prevent wrong-theme flash during hydration
+  if (!isThemeReady) {
+    return (
+      <main className="min-h-screen bg-zinc-950" />
+    );
+  }
 
-      {/* Search Bar */}
-      <input
-        type="text"
-        placeholder="Search any PDF by name..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "10px",
-          marginBottom: "20px",
-          background: "#1e293b",
-          border: "1px solid #475569",
-          color: "#fff",
-          borderRadius: "6px",
-        }}
+  return (
+    <main
+      className={`min-h-screen transition-colors duration-300 pb-16 ${darkMode
+          ? "bg-zinc-950 text-zinc-100 selection:bg-emerald-500 selection:text-white"
+          : "bg-slate-50 text-slate-900 selection:bg-emerald-500 selection:text-white"
+        }`}
+    >
+      {/* Header */}
+      <header
+        className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors duration-300 ${darkMode
+            ? "bg-zinc-900/90 border-zinc-800 text-white"
+            : "border-gray-200 bg-white/90 text-gray-900"
+          }`}
       />
 
-      {/* PDF List */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}
-      >
-        {loading ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              minHeight: "100px",
-              gap: "6px",
-            }}
-            aria-label="Loading PDFs"
-            role="status"
+      {/* Main Container */}
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 space-y-6">
+        <div
+          className={`rounded-2xl p-6 sm:p-8 shadow-sm transition-colors duration-300 ${darkMode
+              ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40"
+              : "border border-slate-200 bg-white text-slate-900"
+            }`}
+        >
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Study Materials &amp; PDFs
+          </h2>
+
+          <p
+            className={`mt-1 text-xs sm:text-sm ${darkMode ? "text-zinc-400" : "text-slate-500"
+              }`}
           >
-            <span className="loading-dot" style={{ animationDelay: "0s" }}>
-              ●
-            </span>
-            <span className="loading-dot" style={{ animationDelay: "0.2s" }}>
-              ●
-            </span>
-            <span className="loading-dot" style={{ animationDelay: "0.4s" }}>
-              ●
-            </span>
-
-            <style jsx>{`
-              .loading-dot {
-                color: #f97316;
-                font-size: 18px;
-                animation: blink 1s infinite ease-in-out;
-              }
-
-              @keyframes blink {
-                0%, 80%, 100% {
-                  opacity: 0.3;
-                  transform: scale(0.8);
-                }
-                40% {
-                  opacity: 1;
-                  transform: scale(1.2);
-                }
-              }
-            `}</style>
-          </div>
-        ) : filteredPdfs.length > 0 ? (
-          filteredPdfs.map((pdf) => (
-            <div
-              key={pdf._id}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                background: "#1e293b",
-                padding: "12px 20px",
-                borderRadius: "8px",
-                borderLeft: "4px solid #f97316",
-                minHeight: "60px",
-                gap: "12px",
-              }}
-            >
-              <div>
-                <h4 style={{ margin: 0, fontSize: "16px" }}>
-                  {pdf.title}
-                </h4>
-                <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                  Size: {pdf.fileSize}
-                </span>
-              </div>
-
-              <a
-                href={pdf.pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  background: "#f97316",
-                  color: "#fff",
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  textDecoration: "none",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                  flexShrink: 0,
-                }}
-              >
-                Download PDF
-              </a>
-            </div>
-          ))
-        ) : (
-          <p style={{ color: "#94a3b8" }}>
-            No PDFs found.
+            Browse and download all available study resources and practice papers.
           </p>
-        )}
+
+          {/* Search Bar */}
+          <div className="mt-6">
+            <input
+              type="text"
+              placeholder="Search any PDF by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`w-full rounded-xl px-4 py-3 text-sm font-medium transition outline-none ${darkMode
+                  ? "bg-zinc-950/70 border border-zinc-800 text-white placeholder-zinc-500 focus:border-emerald-500"
+                  : "border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-emerald-500"
+                }`}
+            />
+          </div>
+        </div>
+
+        {/* PDF List */}
+        <div className="space-y-3">
+          {loading ? (
+            <div
+              className="flex justify-center items-center py-16 gap-2"
+              aria-label="Loading PDFs"
+              role="status"
+            >
+              {[0, 1, 2].map((item) => (
+                <span
+                  key={item}
+                  className="loading-dot"
+                  style={{ animationDelay: `${item * 0.2}s` }}
+                >
+                  ●
+                </span>
+              ))}
+
+              <style jsx>{`
+                .loading-dot {
+                  color: #10b981;
+                  font-size: 20px;
+                  animation: blink 1s infinite ease-in-out;
+                }
+
+                @keyframes blink {
+                  0%, 80%, 100% {
+                    opacity: 0.3;
+                    transform: scale(0.8);
+                  }
+                  40% {
+                    opacity: 1;
+                    transform: scale(1.2);
+                  }
+                }
+              `}</style>
+            </div>
+          ) : filteredPdfs.length > 0 ? (
+            filteredPdfs.map((pdf) => (
+              <div
+                key={pdf._id}
+                className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl px-5 py-4 shadow-sm transition-all duration-200 ${darkMode
+                    ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40 hover:bg-zinc-800/80 border-l-4 border-l-emerald-500"
+                    : "border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-md border-l-4 border-l-emerald-600"
+                  }`}
+              >
+                <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                  <div
+                    className={`mt-0.5 rounded-xl p-2.5 shrink-0 ${darkMode
+                        ? "bg-emerald-500/15 text-emerald-400"
+                        : "bg-emerald-50 text-emerald-600"
+                      }`}
+                  >
+                    <FileText className="w-5 h-5" />
+                  </div>
+
+                  <div className="min-w-0 space-y-1">
+                    <h4
+                      className={`text-base font-bold truncate transition-colors ${darkMode
+                          ? "text-white group-hover:text-emerald-400"
+                          : "text-slate-900 group-hover:text-emerald-700"
+                        }`}
+                    >
+                      {pdf.title}
+                    </h4>
+
+                    <span
+                      className={`text-xs font-medium ${darkMode ? "text-zinc-400" : "text-slate-500"
+                        }`}
+                    >
+                      File Size: {pdf.fileSize}
+                    </span>
+                  </div>
+                </div>
+
+                <a
+                  href={pdf.pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition-all shrink-0 self-end sm:self-center"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </a>
+              </div>
+            ))
+          ) : (
+            <div
+              className={`rounded-2xl p-10 text-center shadow-sm ${darkMode
+                  ? "bg-zinc-900 text-zinc-400"
+                  : "border border-slate-200 bg-white text-slate-500"
+                }`}
+            >
+              <p className="text-sm font-semibold">No PDFs found.</p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
 

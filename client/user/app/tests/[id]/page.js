@@ -2,9 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ThreeDots } from 'react-loader-spinner';
-import { Clock, BookOpen, BookmarkCheck, ShieldAlert, ArrowRight, Layers } from "lucide-react";
+import { ThreeDots } from "react-loader-spinner";
+import {
+  Clock,
+  BookOpen,
+  BookmarkCheck,
+  ShieldAlert,
+  ArrowRight,
+  Layers,
+  Languages,
+} from "lucide-react";
 import { apiRequest } from "@/lib/api";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function TestInstructionsPage() {
   const { id } = useParams();
@@ -13,6 +22,9 @@ export default function TestInstructionsPage() {
   const [test, setTest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const [language, setLanguage] = useState("en");
+
+  const { darkMode, isThemeReady } = useTheme();
 
   useEffect(() => {
     const fetchTest = async () => {
@@ -23,13 +35,12 @@ export default function TestInstructionsPage() {
           router.push("/login");
           return;
         }
+
         const data = await apiRequest(`/tests/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
-        setTest(data.test || data);
 
         setTest(data.test || data);
       } catch (error) {
@@ -59,7 +70,9 @@ export default function TestInstructionsPage() {
         }),
       });
 
-      router.push(`/tests/${id}/attempt?attemptId=${data.attempt.id}`);
+      router.push(
+        `/tests/${id}/attempt?attemptId=${data.attempt.id}&language=${language}`
+      );
     } catch (error) {
       console.error(error);
       alert("Something went wrong while starting the test");
@@ -67,84 +80,260 @@ export default function TestInstructionsPage() {
     }
   };
 
+  if (!isThemeReady) {
+    return <main className="theme-loading" />;
+  }
+
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <ThreeDots color="#059669" height={80} width={80} />
+      <main
+        className={`flex min-h-screen items-center justify-center ${
+          darkMode
+            ? "bg-zinc-950 text-white"
+            : "bg-slate-50 text-slate-900"
+        }`}
+      >
+        <ThreeDots
+          color={darkMode ? "#10b981" : "#059669"}
+          height={80}
+          width={80}
+        />
       </main>
     );
   }
 
   if (!test) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-bold text-slate-700">Test not found.</p>
+      <main
+        className={`flex min-h-screen items-center justify-center ${
+          darkMode
+            ? "bg-zinc-950 text-white"
+            : "bg-slate-50 text-slate-900"
+        }`}
+      >
+        <div
+          className={`rounded-2xl p-8 text-center shadow-sm ${
+            darkMode
+              ? "bg-zinc-900 text-zinc-100"
+              : "border border-slate-200 bg-white"
+          }`}
+        >
+          <p className="text-sm font-bold">Test not found.</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50/60 py-12 px-4 sm:px-6">
-      <div className="mx-auto max-w-3xl space-y-6">
-
+    <main
+      className={`min-h-screen flex flex-col justify-between transition-colors duration-300 ${
+        darkMode
+          ? "bg-zinc-950 text-zinc-100 selection:bg-emerald-500 selection:text-white"
+          : "bg-slate-50/60 text-slate-900 selection:bg-emerald-500 selection:text-white"
+      }`}
+    >
+      <div className="mx-auto max-w-3xl w-full py-12 px-4 sm:px-6 space-y-6 flex-1">
         {/* Header Card */}
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
+        <div
+          className={`rounded-2xl p-6 sm:p-8 shadow-sm transition-colors duration-300 ${
+            darkMode
+              ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40"
+              : "border border-slate-200/80 bg-white text-slate-900"
+          }`}
+        >
           <div className="flex items-center gap-2 mb-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-700 border border-emerald-200/60">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                darkMode
+                  ? "bg-emerald-500/15 text-emerald-400"
+                  : "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+              }`}
+            >
               <Layers className="w-3.5 h-3.5" /> {test.subject}
             </span>
-            <span className="text-slate-300">•</span>
-            <span className="text-xs font-semibold text-slate-500">
+
+            <span className="opacity-40">•</span>
+
+            <span
+              className={`text-xs font-semibold ${
+                darkMode ? "text-zinc-400" : "text-slate-500"
+              }`}
+            >
               {test.topic}
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             {test.title}
           </h1>
 
           {test.description && (
-            <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+            <p
+              className={`mt-2 text-sm leading-relaxed ${
+                darkMode ? "text-zinc-400" : "text-slate-500"
+              }`}
+            >
               {test.description}
             </p>
           )}
         </div>
 
+        {/* Enhanced Language Selector */}
+        <div
+          className={`rounded-2xl p-5 sm:p-6 shadow-sm transition-all ${
+            darkMode
+              ? "bg-zinc-900 shadow-zinc-950/40 border border-zinc-800/60"
+              : "border border-slate-200/80 bg-white"
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className={`p-2.5 rounded-xl ${
+                  darkMode ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-50 text-emerald-600"
+                }`}
+              >
+                <Languages className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-extrabold">
+                  Choose Test Language
+                </h2>
+                <p
+                  className={`mt-0.5 text-xs ${
+                    darkMode ? "text-zinc-400" : "text-slate-500"
+                  }`}
+                >
+                  Select your preferred language for questions & options.
+                </p>
+              </div>
+            </div>
+
+            <div
+              className={`inline-flex w-full sm:w-auto rounded-xl p-1.5 border ${
+                darkMode ? "bg-zinc-950 border-zinc-800" : "bg-slate-100 border-slate-200/60"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setLanguage("en")}
+                aria-pressed={language === "en"}
+                className={`cursor-pointer flex-1 sm:flex-none min-w-28 rounded-lg px-4 py-2 text-xs font-bold transition-all duration-200 ${
+                  language === "en"
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25 scale-[1.02]"
+                    : darkMode
+                      ? "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-white"
+                }`}
+              >
+                English
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLanguage("hi")}
+                aria-pressed={language === "hi"}
+                className={`cursor-pointer flex-1 sm:flex-none min-w-28 rounded-lg px-4 py-2 text-xs font-bold transition-all duration-200 ${
+                  language === "hi"
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25 scale-[1.02]"
+                    : darkMode
+                      ? "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-white"
+                }`}
+              >
+                हिंदी
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Info Grid Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
+          <div
+            className={`flex items-center gap-4 rounded-2xl p-5 shadow-sm ${
+              darkMode
+                ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40"
+                : "border border-slate-200/80 bg-white text-slate-900"
+            }`}
+          >
+            <div
+              className={`rounded-xl p-3 ${
+                darkMode
+                  ? "bg-emerald-500/15 text-emerald-400"
+                  : "bg-emerald-50 text-emerald-600"
+              }`}
+            >
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Duration</p>
-              <p className="mt-0.5 text-base font-bold text-slate-800">
+              <p
+                className={`text-xs font-semibold uppercase tracking-wider ${
+                  darkMode ? "text-zinc-400" : "text-slate-400"
+                }`}
+              >
+                Duration
+              </p>
+              <p className="mt-0.5 text-base font-bold">
                 {test.durationMinutes} Minutes
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="rounded-xl bg-teal-50 p-3 text-teal-600">
+          <div
+            className={`flex items-center gap-4 rounded-2xl p-5 shadow-sm ${
+              darkMode
+                ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40"
+                : "border border-slate-200/80 bg-white text-slate-900"
+            }`}
+          >
+            <div
+              className={`rounded-xl p-3 ${
+                darkMode
+                  ? "bg-teal-500/15 text-teal-400"
+                  : "bg-teal-50 text-teal-600"
+              }`}
+            >
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Subject</p>
-              <p className="mt-0.5 text-base font-bold text-slate-800 truncate max-w-[150px]">
+              <p
+                className={`text-xs font-semibold uppercase tracking-wider ${
+                  darkMode ? "text-zinc-400" : "text-slate-400"
+                }`}
+              >
+                Subject
+              </p>
+              <p className="mt-0.5 text-base font-bold truncate max-w-[150px]">
                 {test.subject}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="rounded-xl bg-indigo-50 p-3 text-indigo-600">
+          <div
+            className={`flex items-center gap-4 rounded-2xl p-5 shadow-sm ${
+              darkMode
+                ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40"
+                : "border border-slate-200/80 bg-white text-slate-900"
+            }`}
+          >
+            <div
+              className={`rounded-xl p-3 ${
+                darkMode
+                  ? "bg-indigo-500/15 text-indigo-400"
+                  : "bg-indigo-50 text-indigo-600"
+              }`}
+            >
               <BookmarkCheck className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Topic</p>
-              <p className="mt-0.5 text-base font-bold text-slate-800 truncate max-w-[150px]">
+              <p
+                className={`text-xs font-semibold uppercase tracking-wider ${
+                  darkMode ? "text-zinc-400" : "text-slate-400"
+                }`}
+              >
+                Topic
+              </p>
+              <p className="mt-0.5 text-base font-bold truncate max-w-[150px]">
                 {test.topic}
               </p>
             </div>
@@ -152,29 +341,46 @@ export default function TestInstructionsPage() {
         </div>
 
         {/* Instructions Card */}
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 text-slate-900 font-bold text-lg">
-            <ShieldAlert className="w-5 h-5 text-emerald-600" />
+        <div
+          className={`rounded-2xl p-6 sm:p-8 shadow-sm space-y-4 ${
+            darkMode
+              ? "bg-zinc-900 text-zinc-100 shadow-zinc-950/40"
+              : "border border-slate-200/80 bg-white text-slate-900"
+          }`}
+        >
+          <div className="flex items-center gap-2 font-bold text-lg">
+            <ShieldAlert
+              className={`w-5 h-5 ${
+                darkMode ? "text-emerald-400" : "text-emerald-600"
+              }`}
+            />
             <h2>General Instructions</h2>
           </div>
 
-          <ul className="space-y-3 text-sm text-slate-600">
-            <li className="flex items-start gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">1</span>
-              <span>Read each question carefully before selecting your answer option.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">2</span>
-              <span>You can freely navigate back and forth between questions during the test.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">3</span>
-              <span>The test will automatically auto-submit when the allocated timer expires.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">4</span>
-              <span>Your performance score and accuracy metrics will be calculated immediately upon submission.</span>
-            </li>
+          <ul
+            className={`space-y-3 text-sm ${
+              darkMode ? "text-zinc-300" : "text-slate-600"
+            }`}
+          >
+            {[
+              "Read each question carefully before selecting your answer option.",
+              "You can freely navigate back and forth between questions during the test.",
+              "The test will automatically submit when the allocated timer expires.",
+              "Your performance score and accuracy metrics will be calculated immediately upon submission.",
+            ].map((instruction, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                    darkMode
+                      ? "bg-emerald-500/20 text-emerald-400"
+                      : "bg-emerald-100 text-emerald-700"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span>{instruction}</span>
+              </li>
+            ))}
           </ul>
         </div>
 
@@ -182,12 +388,13 @@ export default function TestInstructionsPage() {
         <button
           onClick={handleStartTest}
           disabled={starting}
-          className="cursor-pointer w-full rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-extrabold text-white shadow-md hover:bg-emerald-700 hover:shadow-emerald-900/10 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer w-full rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-extrabold text-white shadow-md hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <span>{starting ? "Initializing Test..." : "Start Test Now"}</span>
+          <span>
+            {starting ? "Initializing Test..." : "Start Test Now"}
+          </span>
           {!starting && <ArrowRight className="w-4 h-4" />}
         </button>
-
       </div>
     </main>
   );

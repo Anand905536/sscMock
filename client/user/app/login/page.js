@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -49,27 +48,27 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
-            <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+        <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-zinc-950 px-6 transition-colors duration-300">
+            <div className="w-full max-w-md rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 shadow-sm dark:shadow-zinc-950/40">
                 <div className="mb-8 text-center">
                     <Link
                         href="/"
-                        className="text-2xl font-bold tracking-tight text-black"
+                        className="text-2xl font-extrabold tracking-tight text-black dark:text-white"
                     >
-                        sscMock
+                        SubjectWise
                     </Link>
 
-                    <h1 className="mt-6 text-2xl font-bold text-black">
+                    <h1 className="mt-6 text-2xl font-bold text-black dark:text-white">
                         Welcome back
                     </h1>
 
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-gray-500 dark:text-zinc-400">
                         Login to continue your preparation.
                     </p>
                 </div>
 
                 {error && (
-                    <div className="mb-5 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                    <div className="mb-5 rounded-xl border border-red-200 dark:border-rose-900/50 bg-red-50 dark:bg-rose-950/30 p-3.5 text-sm text-red-600 dark:text-rose-400">
                         {error}
                     </div>
                 )}
@@ -78,7 +77,7 @@ export default function LoginPage() {
                     <div>
                         <label
                             htmlFor="email"
-                            className="mb-2 block text-sm font-medium text-gray-700"
+                            className="mb-2 block text-sm font-medium text-gray-700 dark:text-zinc-300"
                         >
                             Email
                         </label>
@@ -91,7 +90,7 @@ export default function LoginPage() {
                             onChange={handleChange}
                             required
                             autoComplete="email"
-                            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-black"
+                            className="h-11 w-full rounded-xl border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3.5 text-sm text-black dark:text-white outline-none focus:border-emerald-500 transition"
                             placeholder="you@example.com"
                         />
                     </div>
@@ -99,7 +98,7 @@ export default function LoginPage() {
                     <div>
                         <label
                             htmlFor="password"
-                            className="mb-2 block text-sm font-medium text-gray-700"
+                            className="mb-2 block text-sm font-medium text-gray-700 dark:text-zinc-300"
                         >
                             Password
                         </label>
@@ -112,7 +111,7 @@ export default function LoginPage() {
                             onChange={handleChange}
                             required
                             autoComplete="current-password"
-                            className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-black"
+                            className="h-11 w-full rounded-xl border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3.5 text-sm text-black dark:text-white outline-none focus:border-emerald-500 transition"
                             placeholder="••••••••"
                         />
                     </div>
@@ -120,16 +119,16 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="h-11 w-full rounded-md bg-black text-sm font-medium text-white disabled:opacity-50"
+                        className="cursor-pointer h-11 w-full rounded-xl bg-emerald-600 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition-all"
                     >
                         {loading ? "Logging in..." : "Login"}
                     </button>
                 </form>
 
                 <div className="my-6 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-gray-200" />
-                    <span className="text-xs text-gray-400">OR</span>
-                    <div className="h-px flex-1 bg-gray-200" />
+                    <div className="h-px flex-1 bg-gray-200 dark:bg-zinc-800" />
+                    <span className="text-xs text-gray-400 dark:text-zinc-500">OR</span>
+                    <div className="h-px flex-1 bg-gray-200 dark:bg-zinc-800" />
                 </div>
 
                 {/* Google OAuth redirect remains unchanged */}
@@ -139,16 +138,16 @@ export default function LoginPage() {
                         window.location.href =
                             "http://localhost:5000/api/auth/google";
                     }}
-                    className="h-11 w-full rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                    className="cursor-pointer h-11 w-full rounded-xl border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-sm font-medium text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"
                 >
                     Continue with Google
                 </button>
 
-                <p className="mt-6 text-center text-sm text-gray-500">
+                <p className="mt-6 text-center text-sm text-gray-500 dark:text-zinc-400">
                     Don't have an account?{" "}
                     <Link
                         href="/signup"
-                        className="font-medium text-black hover:underline"
+                        className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
                     >
                         Sign up
                     </Link>

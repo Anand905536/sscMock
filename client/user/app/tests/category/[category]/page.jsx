@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { useTheme } from "@/context/ThemeContext";
 import {
   Search,
   BookOpen,
@@ -78,14 +79,13 @@ export default function ExamCategoryPage() {
   const category = String(params.category || "").toLowerCase();
   const data = examCategories[category];
   const [search, setSearch] = useState("");
+  const { darkMode, isThemeReady } = useTheme();
+
 
   const filteredExams = useMemo(() => {
     if (!data) return [];
-
     const query = search.trim().toLowerCase();
-
     if (!query) return data.exams;
-
     return data.exams.filter(
       (exam) =>
         exam.name.toLowerCase().includes(query) ||
@@ -94,10 +94,22 @@ export default function ExamCategoryPage() {
     );
   }, [data, search]);
 
+  if (!isThemeReady) {
+    return <main className="min-h-screen bg-slate-950" />;
+  }
+
   if (!data) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-20 flex items-center justify-center">
-        <div className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+      <main
+        className={`min-h-screen px-4 py-20 flex items-center justify-center ${darkMode ? "bg-slate-950" : "bg-slate-50"
+          }`}
+      >
+        <div
+          className={`mx-auto max-w-md rounded-3xl border p-8 text-center shadow-sm ${darkMode
+              ? "border-slate-700 bg-slate-900"
+              : "border-slate-200 bg-white"
+            }`}
+        >
           <h1 className="text-2xl font-extrabold text-slate-900">
             Exam category not found
           </h1>
@@ -116,8 +128,11 @@ export default function ExamCategoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50/60 pb-16">
-      
+    <main
+      className={`min-h-screen pb-16 ${darkMode ? "bg-slate-950" : "bg-slate-50/60"
+        }`}
+    >
+
       {/* Category Hero Header */}
       <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 py-10 px-4 sm:px-8 text-white shadow-md">
         <div className="mx-auto max-w-7xl space-y-3">

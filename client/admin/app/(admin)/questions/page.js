@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -38,8 +39,8 @@ export default function QuestionsPage() {
           Authorization: `Bearer ${token}`,
         },
       });
-       
-      console.log("data",data)
+
+      console.log("data", data);
       setQuestions(data || []);
     } catch (err) {
       setError(err.message || "Failed to load questions");
@@ -158,7 +159,9 @@ export default function QuestionsPage() {
                     >
                       <td className="max-w-xl px-4 py-4">
                         <p className="line-clamp-2 font-medium">
-                          {question.questionText}
+                          {typeof question.questionText === "string"
+                            ? question.questionText
+                            : question.questionText?.en || question.questionText?.hi || "No question text"}
                         </p>
                       </td>
 

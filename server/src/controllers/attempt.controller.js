@@ -3,19 +3,22 @@ import Question from "../models/Question.model.js";
 import Test from '../models/Test.model.js'
 
 
+// particular attempt results
 
 export const getAttemptResults = async (req, res) => {
   try {
     const { attemptId } = req.params;
     const user = req.user.userId;
 
-    const attempt = await Attempt.findOne({ _id: attemptId, user, status: "completed", })
-      .populate(
-        "test",
-        "title category durationMinutes marksPerQuestion negativeMarks subject topic"
-      );
+    const attempt = await Attempt.findOne({
+      _id: attemptId,
+      user,
+      status: "completed",
+    }).populate(
+      "test",
+      "title category durationMinutes marksPerQuestion negativeMarks subject topic"
+    );
 
-    // console.log("attempt",attempt)
     if (!attempt) {
       return res.status(404).json({
         message: "Completed attempt not found",
@@ -38,7 +41,6 @@ export const getAttemptResults = async (req, res) => {
       maximumMarks > 0
         ? (score / maximumMarks) * 100
         : 0;
-
 
     // Get all completed attempts for this test
     const completedAttempts = await Attempt.find({
@@ -65,28 +67,33 @@ export const getAttemptResults = async (req, res) => {
       }
     }
 
-    const candidateResults = Array.from(bestScoreByUser.values());
+    const candidateResults = Array.from(
+      bestScoreByUser.values()
+    );
 
-    // Convert scores to the current test's percentage scale.
-    // This keeps comparisons consistent if question counts changed.
-    const candidatePercentages = candidateResults.map((candidate) => {
-      const candidateMaximum =
-        candidate.totalQuestions * marksPerQuestion;
+    // Convert scores to percentage scale
+    const candidatePercentages = candidateResults.map(
+      (candidate) => {
+        const candidateMaximum =
+          candidate.totalQuestions * marksPerQuestion;
 
-      return candidateMaximum > 0
-        ? Math.min(
-          100,
-          (candidate.score / candidateMaximum) * 100
-        )
-        : 0;
-    });
+        return candidateMaximum > 0
+          ? Math.min(
+              100,
+              (candidate.score / candidateMaximum) * 100
+            )
+          : 0;
+      }
+    );
 
     const totalCandidates = candidatePercentages.length;
 
     const averagePercentage =
       totalCandidates > 0
-        ? candidatePercentages.reduce((sum, value) => sum + value, 0) /
-        totalCandidates
+        ? candidatePercentages.reduce(
+            (sum, value) => sum + value,
+            0
+          ) / totalCandidates
         : 0;
 
     const highestPercentage =
@@ -94,12 +101,16 @@ export const getAttemptResults = async (req, res) => {
         ? Math.max(...candidatePercentages)
         : 0;
 
-    // Convert the percentages to this test's marks scale
-    const averageMarks = (averagePercentage / 100) * maximumMarks;
-    const highestMarks = (highestPercentage / 100) * maximumMarks;
+    const averageMarks =
+      (averagePercentage / 100) * maximumMarks;
+
+    const highestMarks =
+      (highestPercentage / 100) * maximumMarks;
 
     // Current student's best score percentage
-    const currentUserBest = bestScoreByUser.get(user.toString());
+    const currentUserBest = bestScoreByUser.get(
+      user.toString()
+    );
 
     const currentUserMaximum = currentUserBest
       ? currentUserBest.totalQuestions * marksPerQuestion
@@ -110,24 +121,28 @@ export const getAttemptResults = async (req, res) => {
         ? (currentUserBest.score / currentUserMaximum) * 100
         : percentage;
 
+    // Rank and percentile
+    const candidatesBelow = candidatePercentages.filter(
+      (value) => value < percentage
+    ).length;
 
-    // Rank and percentile based on the current attempt's percentage
+    const percentile =
+      totalCandidates > 0
+        ? (candidatesBelow / totalCandidates) * 100
+        : 0;
 
-    const candidatesBelow = candidatePercentages.filter((value) => value < percentage).length;
-
-    const percentile =totalCandidates > 0 ? (candidatesBelow / totalCandidates) * 100 : 0;
-
-    const candidatesAbove = candidatePercentages.filter((value) => value > percentage).length;
+    const candidatesAbove = candidatePercentages.filter(
+      (value) => value > percentage
+    ).length;
 
     const rank = candidatesAbove + 1;
 
-// console.log("condidate from attempcontroller",rank,percentile,candidatesAbove,candidatesBelow)
-
-
-    // Calculate correct / incorrect / unanswered
+    // Fetch bilingual questions
     const questions = await Question.find({
       test: attempt.test._id,
-    }).select("_id questionText options correctAnswer explanation");
+    }).select(
+      "_id questionText options correctAnswer explanation"
+    );
 
     let correctAnswers = 0;
     let incorrectAnswers = 0;
@@ -135,6 +150,7 @@ export const getAttemptResults = async (req, res) => {
 
     const questionResults = [];
 
+    // Map submitted answers by question ID
     const submittedAnswers = new Map();
 
     for (const answer of attempt.answers) {
@@ -144,15 +160,20 @@ export const getAttemptResults = async (req, res) => {
       );
     }
 
+    // Calculate question-wise results
     for (const question of questions) {
       const selectedAnswer = submittedAnswers.get(
         question._id.toString()
       );
 
-      if (
+      // -1, undefined, null, and empty string mean unanswered
+      const isUnanswered =
         selectedAnswer === undefined ||
-        selectedAnswer === ""
-      ) {
+        selectedAnswer === null ||
+        selectedAnswer === "" ||
+        Number(selectedAnswer) === -1;
+
+      if (isUnanswered) {
         unanswered++;
 
         questionResults.push({
@@ -160,13 +181,19 @@ export const getAttemptResults = async (req, res) => {
           questionText: question.questionText,
           options: question.options,
           explanation: question.explanation,
-          selectedAnswer: "",
+          selectedAnswer: -1,
           correctAnswer: question.correctAnswer,
           status: "unanswered",
         });
-      } else if (
-        selectedAnswer === question.correctAnswer
-      ) {
+
+        continue;
+      }
+
+      // Numeric index comparison: 0, 1, 2, or 3
+      const selectedIndex = Number(selectedAnswer);
+      const correctIndex = Number(question.correctAnswer);
+
+      if (selectedIndex === correctIndex) {
         correctAnswers++;
 
         questionResults.push({
@@ -174,8 +201,8 @@ export const getAttemptResults = async (req, res) => {
           questionText: question.questionText,
           options: question.options,
           explanation: question.explanation,
-          selectedAnswer,
-          correctAnswer: question.correctAnswer,
+          selectedAnswer: selectedIndex,
+          correctAnswer: correctIndex,
           status: "correct",
         });
       } else {
@@ -186,8 +213,8 @@ export const getAttemptResults = async (req, res) => {
           questionText: question.questionText,
           options: question.options,
           explanation: question.explanation,
-          selectedAnswer,
-          correctAnswer: question.correctAnswer,
+          selectedAnswer: selectedIndex,
+          correctAnswer: correctIndex,
           status: "incorrect",
         });
       }
@@ -202,23 +229,34 @@ export const getAttemptResults = async (req, res) => {
       const start = i * interval;
       const end = (i + 1) * interval;
 
-      const students = candidatePercentages.filter((percentage) => {
-        const candidateMarks = (percentage / 100) * maximumMarks;
+      const students = candidatePercentages.filter(
+        (candidatePercentage) => {
+          const candidateMarks =
+            (candidatePercentage / 100) * maximumMarks;
 
-        if (i === 4) {
-          return candidateMarks >= start && candidateMarks <= end;
+          if (i === 4) {
+            return (
+              candidateMarks >= start &&
+              candidateMarks <= end
+            );
+          }
+
+          return (
+            candidateMarks >= start &&
+            candidateMarks < end
+          );
         }
-
-        return candidateMarks >= start && candidateMarks < end;
-      }).length;
+      ).length;
 
       marksDistribution.push({
-        range: `${Number(start.toFixed(2))}–${Number(end.toFixed(2))}`,
+        range: `${Number(start.toFixed(2))}–${Number(
+          end.toFixed(2)
+        )}`,
         students,
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Attempt result fetched successfully",
 
       result: {
@@ -243,74 +281,72 @@ export const getAttemptResults = async (req, res) => {
         startedAt: attempt.startedAt,
         completedAt: attempt.completedAt,
         status: attempt.status,
-
       },
     });
+
   } catch (error) {
     console.error("getAttemptResults error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to fetch attempt result",
       error: error.message,
     });
   }
 };
+
+
 // start attempt
 export const startAttempt = async (req, res) => {
   try {
-    const { test } = req.body
-    const user = req.user.userId
+    const { test } = req.body;
+    const user = req.user.userId;
 
     if (!test) {
       return res.status(400).json({
         message: "test is required",
-      })
+      });
     }
 
-    const existingTest = await Test.findById(test)
-
-    const existingAttempt = await Attempt.findOne({
-      user,
-      test,
-      status: "in-progress",
-    })
-
-    if (existingAttempt) {
-      return res.status(200).json({
-        message: "Existing attempt found",
-        attempt: {
-          id: existingAttempt._id,
-          test: existingAttempt.test,
-          startedAt: existingAttempt.startedAt,
-          durationMinutes: existingTest.durationMinutes,
-          totalQuestions: existingAttempt.totalQuestions,
-          status: existingAttempt.status,
-        }
-      })
-    }
-
+    const existingTest = await Test.findById(test);
 
     if (!existingTest) {
       return res.status(404).json({
-        message: "Test not found"
-      })
+        message: "Test not found",
+      });
     }
 
     if (req.user.role !== "admin" && existingTest.status !== "published") {
       return res.status(403).json({
-        message: "This test is not available"
-      })
+        message: "This test is not available",
+      });
     }
 
-    const questions = await Question.find({ test, })
-    // console.log("questions",test)
+    // Find previous in-progress attempt
+    const existingAttempt = await Attempt.findOne({
+      user,
+      test,
+      status: "in-progress",
+    });
 
-    if (questions.length == 0) {
+    // Delete previous attempt if found
+    if (existingAttempt) {
+      await Attempt.deleteOne({
+        _id: existingAttempt._id,
+        user,
+        test,
+        status: "in-progress",
+      });
+    }
+
+    const questions = await Question.find({ test });
+
+    if (questions.length === 0) {
       return res.status(400).json({
         message: "This test has no questions",
-      })
+      });
     }
 
+    // Create a fresh attempt
     const attempt = await Attempt.create({
       user,
       test,
@@ -319,10 +355,9 @@ export const startAttempt = async (req, res) => {
       totalQuestions: questions.length,
       status: "in-progress",
       startedAt: new Date(),
-    })
+    });
 
-
-    res.status(201).json({
+    return res.status(201).json({
       message: "Test started successfully",
       attempt: {
         id: attempt._id,
@@ -331,100 +366,91 @@ export const startAttempt = async (req, res) => {
         durationMinutes: existingTest.durationMinutes,
         totalQuestions: questions.length,
         status: attempt.status,
-      }
-    })
+      },
+    });
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to start test",
-      error: err.message
-    })
+      error: err.message,
+    });
   }
-}
+};
 
+// submit attempt
 export const submitAttempt = async (req, res) => {
   try {
     const { answers } = req.body;
+   
     const { attemptId } = req.params;
-
-    const user = req.user.userId
-
-    if (!answers) {
-      return res.status(400).json({
-        message: "answers are required",
-      })
-    }
+    const user = req.user.userId;
 
     if (!Array.isArray(answers)) {
       return res.status(400).json({
-        message: "answers must be an array",
-      })
+        message: "Answers must be an array",
+      });
     }
 
-    // find the existing attempt
     const attempt = await Attempt.findOne({
       _id: attemptId,
       user,
-    })
-
+    });
 
     if (!attempt) {
       return res.status(404).json({
-        message: "Attempt not found"
-      })
+        message: "Attempt not found",
+      });
     }
 
-
-    // preventing submitting an already completed attempt
     if (attempt.status === "completed") {
       return res.status(400).json({
         message: "This attempt has already been completed",
-      })
+      });
     }
 
-    // get the test
-    const existingTest = await Test.findById(attempt.test)
+    const existingTest = await Test.findById(attempt.test);
 
     if (!existingTest) {
       return res.status(404).json({
         message: "Test not found",
-      })
+      });
     }
 
-    // get questions belonging to this test
     const questions = await Question.find({
-      test: attempt.test
-    })
+      test: attempt.test,
+    });
 
-    // check submitted question IDs
-    const questionIds = new Set(
-      questions.map((question) => question._id.toString())
+    const questionMap = new Map(
+      questions.map((question) => [
+        question._id.toString(),
+        question,
+      ])
     );
 
     const submittedQuestionIds = new Set();
 
     for (const answer of answers) {
-      if (!questionIds.has(answer.question)) {
+      const questionId = answer.question?.toString();
+
+      if (!questionMap.has(questionId)) {
         return res.status(400).json({
           message: "Invalid question for this test",
         });
       }
 
-      if (submittedQuestionIds.has(answer.question)) {
+      if (submittedQuestionIds.has(questionId)) {
         return res.status(400).json({
           message: "Duplicate question in answers",
         });
       }
 
-      submittedQuestionIds.add(answer.question);
+      submittedQuestionIds.add(questionId);
 
-      const question = questions.find(
-        (question) =>
-          question._id.toString() === answer.question
-      );
+      const selectedAnswer = answer.selectedAnswer;
 
       if (
-        answer.selectedAnswer !== "" &&
-        !question.options.includes(answer.selectedAnswer)
+        !Number.isInteger(selectedAnswer) ||
+        selectedAnswer < -1 ||
+        selectedAnswer > 3
       ) {
         return res.status(400).json({
           message: "Invalid answer option",
@@ -432,7 +458,6 @@ export const submitAttempt = async (req, res) => {
       }
     }
 
-    // Calculate elapsed time
     const now = new Date();
 
     const elapsedMilliseconds =
@@ -444,38 +469,27 @@ export const submitAttempt = async (req, res) => {
     const timeExpired =
       elapsedMinutes >= existingTest.durationMinutes;
 
-    // Calculate score
     let score = 0;
 
     const marksPerQuestion = existingTest.marksPerQuestion ?? 1;
     const negativeMarks = existingTest.negativeMarks ?? 0;
 
     for (const answer of answers) {
-      const question = questions.find(
-        (question) =>
-          question._id.toString() === answer.question
+      const question = questionMap.get(
+        answer.question.toString()
       );
 
-      if (!question) continue;
-
-      // Unanswered question
-      if (
-        answer.selectedAnswer === undefined ||
-        answer.selectedAnswer === ""
-      ) {
+      if (!question || answer.selectedAnswer === -1) {
         continue;
       }
 
-      // Correct answer
       if (question.correctAnswer === answer.selectedAnswer) {
         score += marksPerQuestion;
       } else {
-        // Wrong answer
         score -= negativeMarks;
       }
     }
 
-    // Update existing attempt
     attempt.answers = answers;
     attempt.score = score;
     attempt.totalQuestions = questions.length;
@@ -483,8 +497,8 @@ export const submitAttempt = async (req, res) => {
     attempt.completedAt = now;
 
     await attempt.save();
-
-    res.status(200).json({
+    //  console.log("called from submit attempt",attempt)
+    return res.status(200).json({
       message: timeExpired
         ? "Time expired. Attempt submitted."
         : "Attempt submitted successfully",
@@ -495,13 +509,14 @@ export const submitAttempt = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to submit attempt",
       error: error.message,
     });
   }
 };
 
+// to get all attempts
 export const getMyAttempts = async (req, res) => {
   try {
     const user = req.user.userId
