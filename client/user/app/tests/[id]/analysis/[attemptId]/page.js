@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
     useParams,
-    router,
     useRouter,
     useSearchParams,
 } from "next/navigation";
@@ -70,11 +69,10 @@ export default function AnalysisPage() {
     if (loading) {
         return (
             <main
-                className={`flex min-h-screen items-center justify-center ${
-                    darkMode
-                        ? "bg-zinc-950 text-white"
-                        : "bg-white text-gray-900"
-                }`}
+                className={`flex min-h-screen items-center justify-center ${darkMode
+                    ? "bg-zinc-950 text-white"
+                    : "bg-white text-gray-900"
+                    }`}
             >
                 <ThreeDots
                     color={darkMode ? "#10b981" : "#059669"}
@@ -86,11 +84,10 @@ export default function AnalysisPage() {
     if (!result) {
         return (
             <main
-                className={`flex min-h-screen items-center justify-center ${
-                    darkMode
-                        ? "bg-zinc-950 text-white"
-                        : "bg-white text-gray-900"
-                }`}
+                className={`flex min-h-screen items-center justify-center ${darkMode
+                    ? "bg-zinc-950 text-white"
+                    : "bg-white text-gray-900"
+                    }`}
             >
                 <p className={darkMode ? "text-zinc-400" : "text-gray-500"}>
                     Analysis not found.
@@ -107,24 +104,27 @@ export default function AnalysisPage() {
             return value;
         }
 
-        return value?.[language] || value?.en || value?.hi || "";
+        if (!value || typeof value !== "object") {
+            return "";
+        }
+
+        return value[language] || value.en || value.hi || "";
     };
 
+    
     return (
         <main
-            className={`min-h-screen transition-colors duration-300 ${
-                darkMode
-                    ? "bg-zinc-950 text-zinc-100 selection:bg-emerald-500 selection:text-white"
-                    : "bg-gray-50 text-gray-900 selection:bg-emerald-500 selection:text-white"
-            }`}
+            className={`min-h-screen transition-colors duration-300 ${darkMode
+                ? "bg-zinc-950 text-zinc-100 selection:bg-emerald-500 selection:text-white"
+                : "bg-gray-50 text-gray-900 selection:bg-emerald-500 selection:text-white"
+                }`}
         >
             {/* Header */}
             <header
-                className={`sticky top-0 z-40 backdrop-blur-md transition-colors duration-300 ${
-                    darkMode
-                        ? "bg-zinc-900/90 border-b border-zinc-800 text-white"
-                        : "border-b border-gray-200 bg-white/90 text-gray-900"
-                }`}
+                className={`sticky top-0 z-40 backdrop-blur-md transition-colors duration-300 ${darkMode
+                    ? "bg-zinc-900/90 border-b border-zinc-800 text-white"
+                    : "border-b border-gray-200 bg-white/90 text-gray-900"
+                    }`}
             >
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
                     <div>
@@ -133,11 +133,10 @@ export default function AnalysisPage() {
                         </h1>
 
                         <p
-                            className={`text-[11px] font-medium ${
-                                darkMode
-                                    ? "text-emerald-400"
-                                    : "text-emerald-600"
-                            }`}
+                            className={`text-[11px] font-medium ${darkMode
+                                ? "text-emerald-400"
+                                : "text-emerald-600"
+                                }`}
                         >
                             Detailed Question Analysis
                         </p>
@@ -150,11 +149,10 @@ export default function AnalysisPage() {
                                 `/tests/${id}/result?attemptId=${attemptId}&language=${language}`
                             )
                         }
-                        className={`cursor-pointer inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-xs ${
-                            darkMode
-                                ? "bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:text-white"
-                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                        }`}
+                        className={`cursor-pointer inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-xs ${darkMode
+                            ? "bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:text-white"
+                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                            }`}
                     >
                         <ArrowLeft className="w-3.5 h-3.5" />
                         <span>Back to Result</span>
@@ -166,11 +164,10 @@ export default function AnalysisPage() {
                 <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
                     {/* Question Analysis */}
                     <section
-                        className={`rounded-3xl p-6 sm:p-8 shadow-xl shadow-zinc-950/40 transition-colors duration-300 ${
-                            darkMode
-                                ? "bg-zinc-900 text-zinc-100"
-                                : "border border-gray-200 bg-white text-gray-900"
-                        }`}
+                        className={`rounded-3xl p-6 sm:p-8 shadow-xl shadow-zinc-950/40 transition-colors duration-300 ${darkMode
+                            ? "bg-zinc-900 text-zinc-100"
+                            : "border border-gray-200 bg-white text-gray-900"
+                            }`}
                     >
                         {(() => {
                             const question = questionResults[currentQuestion];
@@ -192,9 +189,8 @@ export default function AnalysisPage() {
                             return (
                                 <>
                                     {/* Top Navigation Strip */}
-                                    <div className={`mb-4 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm font-medium px-5 py-3 rounded-2xl ${
-                                        darkMode ? "bg-zinc-950/60 text-zinc-300" : "bg-gray-50 border border-gray-200 text-gray-600"
-                                    }`}>
+                                    <div className={`mb-4 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm font-medium px-5 py-3 rounded-2xl ${darkMode ? "bg-zinc-950/60 text-zinc-300" : "bg-gray-50 border border-gray-200 text-gray-600"
+                                        }`}>
                                         <div className="flex items-center gap-2">
                                             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
                                             <span>Question <strong className={darkMode ? "text-white" : "text-gray-900"}>{currentQuestion + 1}</strong> of <strong className={darkMode ? "text-white" : "text-gray-900"}>{questionResults.length}</strong></span>
@@ -207,9 +203,8 @@ export default function AnalysisPage() {
                                                 onClick={() =>
                                                     setCurrentQuestion((previous) => previous - 1)
                                                 }
-                                                className={`cursor-pointer flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-all disabled:opacity-30 disabled:pointer-events-none ${
-                                                    darkMode ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white" : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                                                }`}
+                                                className={`cursor-pointer flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition-all disabled:opacity-30 disabled:pointer-events-none ${darkMode ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white" : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                    }`}
                                             >
                                                 <ChevronLeft className="w-4 h-4" />
                                                 <span>Previous</span>
@@ -246,11 +241,10 @@ export default function AnalysisPage() {
                                         <div className="flex items-start justify-between gap-4">
                                             <div>
                                                 <h2
-                                                    className={`text-base sm:text-lg font-bold leading-relaxed ${
-                                                        darkMode
-                                                            ? "text-white"
-                                                            : "text-black"
-                                                    }`}
+                                                    className={`text-base sm:text-lg font-bold leading-relaxed ${darkMode
+                                                        ? "text-white"
+                                                        : "text-black"
+                                                        }`}
                                                 >
                                                     {getLanguageText(
                                                         question.questionText
@@ -259,25 +253,24 @@ export default function AnalysisPage() {
                                             </div>
 
                                             <span
-                                                className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                                                    question.status === "correct"
-                                                        ? darkMode
-                                                            ? "bg-emerald-500/15 text-emerald-400"
-                                                            : "bg-green-100 text-green-700"
-                                                        : question.status === "incorrect"
+                                                className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${question.status === "correct"
+                                                    ? darkMode
+                                                        ? "bg-emerald-500/15 text-emerald-400"
+                                                        : "bg-green-100 text-green-700"
+                                                    : question.status === "incorrect"
                                                         ? darkMode
                                                             ? "bg-rose-500/15 text-rose-400"
                                                             : "bg-red-100 text-red-700"
                                                         : darkMode
-                                                        ? "bg-zinc-800 text-zinc-400"
-                                                        : "bg-gray-100 text-gray-600"
-                                                }`}
+                                                            ? "bg-zinc-800 text-zinc-400"
+                                                            : "bg-gray-100 text-gray-600"
+                                                    }`}
                                             >
                                                 {question.status === "correct"
                                                     ? "Solved"
                                                     : question.status === "incorrect"
-                                                    ? "Wrong"
-                                                    : "Left"}
+                                                        ? "Wrong"
+                                                        : "Left"}
                                             </span>
                                         </div>
 
@@ -296,32 +289,30 @@ export default function AnalysisPage() {
                                                     return (
                                                         <div
                                                             key={index}
-                                                            className={`rounded-2xl px-4 py-3.5 text-sm font-medium transition-all ${
-                                                                isCorrect
-                                                                    ? darkMode
-                                                                        ? "bg-emerald-500/20 text-emerald-300 font-semibold shadow-xs"
-                                                                        : "border border-green-300 bg-green-50 text-green-800 font-semibold"
-                                                                    : isSelected
+                                                            className={`rounded-2xl px-4 py-3.5 text-sm font-medium transition-all ${isCorrect
+                                                                ? darkMode
+                                                                    ? "bg-emerald-500/20 text-emerald-300 font-semibold shadow-xs"
+                                                                    : "border border-green-300 bg-green-50 text-green-800 font-semibold"
+                                                                : isSelected
                                                                     ? darkMode
                                                                         ? "bg-rose-500/20 text-rose-300 font-semibold shadow-xs"
                                                                         : "border border-red-300 bg-red-50 text-red-800 font-semibold"
                                                                     : darkMode
-                                                                    ? "bg-zinc-950/70 text-zinc-300"
-                                                                    : "border border-gray-200 text-gray-700"
-                                                            }`}
+                                                                        ? "bg-zinc-950/70 text-zinc-300"
+                                                                        : "border border-gray-200 text-gray-700"
+                                                                }`}
                                                         >
                                                             <div className="flex items-center justify-between gap-3">
                                                                 <span className="flex items-center gap-3">
                                                                     <span
-                                                                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
-                                                                            isCorrect
-                                                                                ? "bg-emerald-500 text-zinc-950"
-                                                                                : isSelected
+                                                                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${isCorrect
+                                                                            ? "bg-emerald-500 text-zinc-950"
+                                                                            : isSelected
                                                                                 ? "bg-rose-500 text-white"
                                                                                 : darkMode
-                                                                                ? "bg-zinc-900 text-zinc-400"
-                                                                                : "border border-gray-200 bg-gray-100 text-gray-600"
-                                                                        }`}
+                                                                                    ? "bg-zinc-900 text-zinc-400"
+                                                                                    : "border border-gray-200 bg-gray-100 text-gray-600"
+                                                                            }`}
                                                                     >
                                                                         {String.fromCharCode(
                                                                             65 + index
@@ -372,28 +363,25 @@ export default function AnalysisPage() {
                                     {/* Explanation (Fixed outside scroller) */}
                                     {getLanguageText(question.explanation) && (
                                         <div
-                                            className={`mt-6 rounded-2xl p-5 ${
-                                                darkMode
-                                                    ? "bg-zinc-950/60 text-zinc-300 border border-zinc-800/80"
-                                                    : "border border-gray-200 bg-gray-50 text-gray-700"
-                                            }`}
+                                            className={`mt-6 rounded-2xl p-5 ${darkMode
+                                                ? "bg-zinc-950/60 text-zinc-300 border border-zinc-800/80"
+                                                : "border border-gray-200 bg-gray-50 text-gray-700"
+                                                }`}
                                         >
                                             <p
-                                                className={`text-xs font-bold uppercase tracking-wider ${
-                                                    darkMode
-                                                        ? "text-emerald-400"
-                                                        : "text-slate-700"
-                                                }`}
+                                                className={`text-xs font-bold uppercase tracking-wider ${darkMode
+                                                    ? "text-emerald-400"
+                                                    : "text-slate-700"
+                                                    }`}
                                             >
                                                 Explanation
                                             </p>
 
                                             <p
-                                                className={`mt-2 text-xs sm:text-sm leading-relaxed ${
-                                                    darkMode
-                                                        ? "text-zinc-300"
-                                                        : "text-gray-600"
-                                                }`}
+                                                className={`mt-2 text-xs sm:text-sm leading-relaxed ${darkMode
+                                                    ? "text-zinc-300"
+                                                    : "text-gray-600"
+                                                    }`}
                                             >
                                                 {getLanguageText(
                                                     question.explanation
@@ -408,11 +396,10 @@ export default function AnalysisPage() {
 
                     {/* Questions Navigation Sidebar */}
                     <aside
-                        className={`rounded-3xl p-5 shadow-xl shadow-zinc-950/40 self-start sticky top-24 transition-colors duration-300 ${
-                            darkMode
-                                ? "bg-zinc-900 text-zinc-100"
-                                : "border border-gray-200 bg-white text-gray-900"
-                        }`}
+                        className={`rounded-3xl p-5 shadow-xl shadow-zinc-950/40 self-start sticky top-24 transition-colors duration-300 ${darkMode
+                            ? "bg-zinc-900 text-zinc-100"
+                            : "border border-gray-200 bg-white text-gray-900"
+                            }`}
                     >
                         <h2 className="text-[11px] font-extrabold uppercase tracking-wider opacity-80">
                             Questions Navigation
@@ -426,26 +413,24 @@ export default function AnalysisPage() {
                                     onClick={() =>
                                         setCurrentQuestion(index)
                                     }
-                                    className={`cursor-pointer flex h-8 w-8 items-center justify-center rounded-xl text-xs font-bold transition-all ${
-                                        index === currentQuestion
-                                            ? "ring-2 ring-emerald-500 ring-offset-1 scale-105 font-extrabold " +
-                                              (darkMode
-                                                  ? "ring-offset-zinc-900"
-                                                  : "ring-offset-white")
-                                            : ""
-                                    } ${
-                                        question.status === "correct"
+                                    className={`cursor-pointer flex h-8 w-8 items-center justify-center rounded-xl text-xs font-bold transition-all ${index === currentQuestion
+                                        ? "ring-2 ring-emerald-500 ring-offset-1 scale-105 font-extrabold " +
+                                        (darkMode
+                                            ? "ring-offset-zinc-900"
+                                            : "ring-offset-white")
+                                        : ""
+                                        } ${question.status === "correct"
                                             ? darkMode
                                                 ? "bg-emerald-500/20 text-emerald-400"
                                                 : "bg-green-100 text-green-700"
                                             : question.status === "incorrect"
-                                            ? darkMode
-                                                ? "bg-rose-500/20 text-rose-400"
-                                                : "bg-red-100 text-red-700"
-                                            : darkMode
-                                            ? "bg-zinc-950 text-zinc-400"
-                                            : "bg-gray-100 text-gray-500"
-                                    }`}
+                                                ? darkMode
+                                                    ? "bg-rose-500/20 text-rose-400"
+                                                    : "bg-red-100 text-red-700"
+                                                : darkMode
+                                                    ? "bg-zinc-950 text-zinc-400"
+                                                    : "bg-gray-100 text-gray-500"
+                                        }`}
                                 >
                                     {index + 1}
                                 </button>
@@ -454,19 +439,17 @@ export default function AnalysisPage() {
 
                         {/* Legend */}
                         <div
-                            className={`mt-6 space-y-2 pt-4 text-[11px] font-medium ${
-                                darkMode
-                                    ? "border-t border-zinc-800 text-zinc-400"
-                                    : "border-t border-gray-100 text-gray-500"
-                            }`}
+                            className={`mt-6 space-y-2 pt-4 text-[11px] font-medium ${darkMode
+                                ? "border-t border-zinc-800 text-zinc-400"
+                                : "border-t border-gray-100 text-gray-500"
+                                }`}
                         >
                             <p className="flex items-center gap-2">
                                 <span
-                                    className={`inline-block h-2.5 w-2.5 rounded-sm ${
-                                        darkMode
-                                            ? "bg-emerald-500/30"
-                                            : "bg-green-100"
-                                    }`}
+                                    className={`inline-block h-2.5 w-2.5 rounded-sm ${darkMode
+                                        ? "bg-emerald-500/30"
+                                        : "bg-green-100"
+                                        }`}
                                 />
                                 <span
                                     className={
@@ -481,11 +464,10 @@ export default function AnalysisPage() {
 
                             <p className="flex items-center gap-2">
                                 <span
-                                    className={`inline-block h-2.5 w-2.5 rounded-sm ${
-                                        darkMode
-                                            ? "bg-rose-500/30"
-                                            : "bg-red-100"
-                                    }`}
+                                    className={`inline-block h-2.5 w-2.5 rounded-sm ${darkMode
+                                        ? "bg-rose-500/30"
+                                        : "bg-red-100"
+                                        }`}
                                 />
                                 <span
                                     className={
@@ -500,11 +482,10 @@ export default function AnalysisPage() {
 
                             <p className="flex items-center gap-2">
                                 <span
-                                    className={`inline-block h-2.5 w-2.5 rounded-sm ${
-                                        darkMode
-                                            ? "bg-zinc-950"
-                                            : "bg-gray-100"
-                                    }`}
+                                    className={`inline-block h-2.5 w-2.5 rounded-sm ${darkMode
+                                        ? "bg-zinc-950"
+                                        : "bg-gray-100"
+                                        }`}
                                 />
                                 <span
                                     className={
