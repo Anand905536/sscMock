@@ -254,15 +254,35 @@ export default function CreateFullLengthExamPage() {
   }
 
   const inputClass =
-    "w-full rounded-lg border border-gray-300 bg-white p-2 text-gray-900";
-  const labelClass = "block space-y-1 text-sm font-medium";
+    "w-full rounded-lg border border-zinc-700 bg-zinc-950 p-3 text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20";
+
+  const labelClass =
+    "block space-y-2 text-sm font-medium text-zinc-300";
+
+  const cardClass =
+    "space-y-5 rounded-xl border border-zinc-800 bg-zinc-900 p-5";
+
+  const secondaryButtonClass =
+    "rounded-lg border border-zinc-700 px-4 py-2 font-semibold text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 hover:text-white";
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 p-6 text-gray-900">
-      <h1 className="text-2xl font-bold">Create Full-Length Exam</h1>
+    <main className="min-h-screen w-full space-y-6 bg-zinc-950 p-6 text-zinc-100 md:p-8">
+      <div>
+        <h1 className="text-2xl font-bold text-white md:text-3xl">
+          Create Full-Length Exam
+        </h1>
+        <p className="mt-2 text-sm text-zinc-400">
+          Create exam sections, configure timers and add questions.
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-4 rounded-xl border bg-white p-5">
+        {/* Exam Details */}
+        <div className={cardClass}>
+          <h2 className="text-lg font-bold text-white">
+            Exam Details
+          </h2>
+
           <label className={labelClass}>
             Exam Title
             <input
@@ -326,14 +346,22 @@ export default function CreateFullLengthExamPage() {
           </div>
         </div>
 
+        {/* Sections */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-bold">Sections & Timers</h2>
+            <div>
+              <h2 className="text-xl font-bold text-white">
+                Sections & Timers
+              </h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Add sections and configure their exam settings.
+              </p>
+            </div>
 
             <button
               type="button"
               onClick={addSection}
-              className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white"
+              className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700"
             >
               + Add Section
             </button>
@@ -342,22 +370,28 @@ export default function CreateFullLengthExamPage() {
           {sections.map((section, sectionIndex) => (
             <section
               key={sectionIndex}
-              className="space-y-5 rounded-xl border bg-white p-5"
+              className={cardClass}
             >
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-lg font-bold">
-                  Section {sectionIndex + 1}
-                </h3>
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-white">
+                    Section {sectionIndex + 1}
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Configure section and questions
+                  </p>
+                </div>
 
                 <button
                   type="button"
                   onClick={() => removeSection(sectionIndex)}
-                  className="rounded-lg border border-red-300 px-3 py-1 text-sm text-red-600"
+                  className="rounded-lg border border-rose-500/30 px-3 py-2 text-sm text-rose-400 transition hover:bg-rose-500/10"
                 >
                   Remove Section
                 </button>
               </div>
 
+              {/* Section Settings */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className={labelClass}>
                   Section Name
@@ -429,14 +463,19 @@ export default function CreateFullLengthExamPage() {
                 </label>
               </div>
 
-              <div className="space-y-4">
+              {/* Questions */}
+              <div className="space-y-4 border-t border-zinc-800 pt-5">
+                <h3 className="font-semibold text-white">
+                  Section Questions
+                </h3>
+
                 {section.questions.map((question, questionIndex) => (
                   <div
                     key={questionIndex}
-                    className="space-y-4 rounded-lg border bg-gray-50 p-4"
+                    className="space-y-4 rounded-xl border border-zinc-700 bg-zinc-950 p-4"
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <h4 className="font-semibold">
+                    <div className="flex items-center justify-between gap-3 border-b border-zinc-800 pb-3">
+                      <h4 className="font-semibold text-emerald-400">
                         Question {questionIndex + 1}
                       </h4>
 
@@ -445,7 +484,7 @@ export default function CreateFullLengthExamPage() {
                         onClick={() =>
                           removeQuestion(sectionIndex, questionIndex)
                         }
-                        className="text-sm text-red-600"
+                        className="text-sm font-medium text-rose-400 transition hover:text-rose-300"
                       >
                         Remove Question
                       </button>
@@ -544,7 +583,7 @@ export default function CreateFullLengthExamPage() {
                 <button
                   type="button"
                   onClick={() => addQuestion(sectionIndex)}
-                  className="rounded-lg border border-indigo-300 px-4 py-2 font-semibold text-indigo-700"
+                  className={secondaryButtonClass}
                 >
                   + Add Question
                 </button>
@@ -553,20 +592,24 @@ export default function CreateFullLengthExamPage() {
           ))}
         </div>
 
+        {/* Messages */}
         {error && (
-          <p className="rounded-lg bg-red-50 p-3 text-red-700">{error}</p>
+          <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-400">
+            {error}
+          </p>
         )}
 
         {success && (
-          <p className="rounded-lg bg-green-50 p-3 text-green-700">
+          <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-400">
             {success}
           </p>
         )}
 
+        {/* Submit */}
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white disabled:opacity-50"
+          className="rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? "Creating Exam..." : "Create Exam"}
         </button>

@@ -79,19 +79,22 @@ export default function QuestionsPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen w-full bg-zinc-950 p-6 text-zinc-100 md:p-8">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight text-white">
             Questions
           </h1>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mt-1 text-zinc-400">
             Manage questions for your mock tests.
           </p>
         </div>
 
-        <Button onClick={() => router.push("/questions/new")}>
+        <Button
+          onClick={() => router.push("/questions/new")}
+          className="bg-emerald-600 text-white hover:bg-emerald-700"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Question
         </Button>
@@ -99,32 +102,34 @@ export default function QuestionsPage() {
 
       {/* Error */}
       {error && (
-        <Card className="mb-6 border-destructive/30">
+        <Card className="mb-6 border-rose-500/30 bg-zinc-900 text-zinc-100">
           <CardContent className="pt-6">
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-rose-400">{error}</p>
           </CardContent>
         </Card>
       )}
 
       {/* Questions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Questions</CardTitle>
+      <Card className="border-zinc-800 bg-zinc-900 text-zinc-100 shadow-lg">
+        <CardHeader className="border-b border-zinc-800">
+          <CardTitle className="text-white">
+            All Questions
+          </CardTitle>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pt-6">
           {loading ? (
-            <div className="py-10 text-center text-muted-foreground">
+            <div className="py-10 text-center text-zinc-400">
               Loading questions...
             </div>
           ) : questions.length === 0 ? (
             <div className="py-10 text-center">
-              <p className="text-muted-foreground">
+              <p className="text-zinc-400">
                 No questions found.
               </p>
 
               <Button
-                className="mt-4"
+                className="mt-4 bg-emerald-600 text-white hover:bg-emerald-700"
                 onClick={() => router.push("/questions/new")}
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -135,7 +140,7 @@ export default function QuestionsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left">
+                  <tr className="border-b border-zinc-800 text-left text-zinc-400">
                     <th className="px-4 py-3 font-medium">
                       Question
                     </th>
@@ -155,22 +160,27 @@ export default function QuestionsPage() {
                   {questions.map((question) => (
                     <tr
                       key={question._id}
-                      className="border-b last:border-0"
+                      className="border-b border-zinc-800 last:border-0 hover:bg-zinc-800/40"
                     >
                       <td className="max-w-xl px-4 py-4">
-                        <p className="line-clamp-2 font-medium">
+                        <p className="line-clamp-2 font-medium text-zinc-100">
                           {typeof question.questionText === "string"
                             ? question.questionText
-                            : question.questionText?.en || question.questionText?.hi || "No question text"}
+                            : question.questionText?.en ||
+                              question.questionText?.hi ||
+                              "No question text"}
                         </p>
                       </td>
 
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 text-zinc-300">
                         {question.test?.title || "Unknown Test"}
                       </td>
 
                       <td className="px-4 py-4">
-                        <Badge variant="secondary">
+                        <Badge
+                          variant="secondary"
+                          className="border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                        >
                           {question.difficulty || "Medium"}
                         </Badge>
                       </td>
@@ -180,6 +190,7 @@ export default function QuestionsPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            className="border-zinc-700 bg-zinc-950 text-zinc-200 hover:border-emerald-500 hover:bg-zinc-800 hover:text-emerald-400"
                             onClick={() =>
                               router.push(
                                 `/questions/${question._id}/edit`
@@ -193,6 +204,7 @@ export default function QuestionsPage() {
                           <Button
                             variant="destructive"
                             size="sm"
+                            className="bg-rose-600 text-white hover:bg-rose-700"
                             onClick={() =>
                               handleDelete(question._id)
                             }

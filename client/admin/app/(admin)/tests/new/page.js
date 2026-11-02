@@ -98,8 +98,8 @@ export default function NewTestPage() {
           title: form.title,
           description: form.description,
           category: form.category,
-          exam: form.exam, // Added exam
-          type: form.type, // Added type
+          exam: form.exam,
+          type: form.type,
           subject: form.subject,
           topic: form.topic,
           durationMinutes: Number(form.durationMinutes),
@@ -117,13 +117,22 @@ export default function NewTestPage() {
     }
   };
 
+  const inputClass =
+    "bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-emerald-500 focus-visible:border-emerald-500 rounded-xl";
+
+  const selectClass =
+    "flex h-10 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all";
+
+  const labelClass = "text-zinc-300 font-medium text-xs uppercase tracking-wider";
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 space-y-8 p-6 md:p-10 selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen space-y-8 bg-zinc-950 p-6 text-zinc-100 selection:bg-emerald-500/30 selection:text-emerald-200 md:p-10">
+
       {/* Header Area */}
-      <div className="max-w-3xl mx-auto">
+      <div className="mx-auto max-w-3xl">
         <Button
           variant="ghost"
-          className="mb-4 -ml-3 text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+          className="mb-4 -ml-3 text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white rounded-xl cursor-pointer text-xs"
           onClick={() => router.push("/tests")}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -131,33 +140,37 @@ export default function NewTestPage() {
         </Button>
 
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.15)]">
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-400 shadow-sm">
             <Sparkles className="h-6 w-6" />
           </div>
+
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               Create New Test
             </h1>
-            <p className="text-sm text-zinc-400 mt-0.5">
-              Configure a mesmerizing assessment experience for candidates.
+            <p className="mt-0.5 text-xs sm:text-sm text-zinc-400">
+              Configure a seamless assessment experience for candidates.
             </p>
           </div>
         </div>
       </div>
 
       {/* Form Card */}
-      <Card className="max-w-3xl mx-auto bg-zinc-900/60 border-zinc-800/80 backdrop-blur-xl shadow-2xl shadow-indigo-950/20">
-        <CardHeader className="border-b border-zinc-800/60 px-6 py-5">
-          <CardTitle className="text-lg font-semibold text-zinc-200">
+      <Card className="mx-auto max-w-3xl border-zinc-800/80 bg-zinc-900 shadow-2xl shadow-zinc-950/45 rounded-3xl">
+        <CardHeader className="border-b border-zinc-800/80 px-6 py-5">
+          <CardTitle className="text-base font-bold text-white">
             Assessment Parameters
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="p-6">
+        <CardContent className="p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-zinc-300 font-medium">Title</Label>
+              <Label htmlFor="title" className={labelClass}>
+                Title
+              </Label>
               <Input
                 id="title"
                 name="title"
@@ -165,13 +178,15 @@ export default function NewTestPage() {
                 value={form.title}
                 onChange={handleChange}
                 required
-                className="bg-zinc-950/60 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all"
+                className={inputClass}
               />
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-zinc-300 font-medium">Description</Label>
+              <Label htmlFor="description" className={labelClass}>
+                Description
+              </Label>
               <textarea
                 id="description"
                 name="description"
@@ -179,14 +194,16 @@ export default function NewTestPage() {
                 value={form.description}
                 onChange={handleChange}
                 rows={4}
-                className="flex w-full rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                className="flex w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-sm text-zinc-100 outline-none transition-all placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
             {/* Grid Group 1: Category & Exam */}
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="category" className="text-zinc-300 font-medium">Exam</Label>
+                <Label htmlFor="exam" className={labelClass}>
+                  Exam
+                </Label>
                 <Input
                   id="exam"
                   name="exam"
@@ -194,24 +211,26 @@ export default function NewTestPage() {
                   value={form.exam}
                   onChange={handleChange}
                   required
-                  className="bg-zinc-950/60 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all"
+                  className={inputClass}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="exam" className="text-zinc-300 font-medium">Category</Label>
+                <Label htmlFor="category" className={labelClass}>
+                  Category
+                </Label>
                 <select
                   id="category"
                   name="category"
                   value={form.category}
                   onChange={handleChange}
                   required
-                  className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  className={selectClass}
                 >
-                  <option value="" className="bg-zinc-900 text-zinc-500">Select Exam</option>
-                  <option value="SSC" className="bg-zinc-900">SSC</option>
-                  <option value="Banking" className="bg-zinc-900">Banking</option>
-                  <option value="Railway" className="bg-zinc-900">Railway</option>
+                  <option value="" className="bg-zinc-950 text-zinc-400">Select Exam</option>
+                  <option value="SSC" className="bg-zinc-950">SSC</option>
+                  <option value="Banking" className="bg-zinc-950">Banking</option>
+                  <option value="Railway" className="bg-zinc-950">Railway</option>
                 </select>
               </div>
             </div>
@@ -219,33 +238,37 @@ export default function NewTestPage() {
             {/* Grid Group 2: Test Type & Subject */}
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="type" className="text-zinc-300 font-medium">Test Type</Label>
+                <Label htmlFor="type" className={labelClass}>
+                  Test Type
+                </Label>
                 <select
                   id="type"
                   name="type"
                   value={form.type}
                   onChange={handleChange}
                   required
-                  className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  className={selectClass}
                 >
-                  <option value="mock" className="bg-zinc-900">Mock Test</option>
-                  <option value="pyq" className="bg-zinc-900">Previous Year Paper (PYQ)</option>
+                  <option value="mock" className="bg-zinc-950">Mock Test</option>
+                  <option value="pyq" className="bg-zinc-950">Previous Year Paper (PYQ)</option>
                 </select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="subject" className="text-zinc-300 font-medium">Subject</Label>
+                <Label htmlFor="subject" className={labelClass}>
+                  Subject
+                </Label>
                 <select
                   id="subject"
                   name="subject"
                   value={form.subject}
                   onChange={handleSubjectChange}
                   required
-                  className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  className={selectClass}
                 >
-                  <option value="" className="bg-zinc-900 text-zinc-500">Select subject</option>
-                  <option value="English" className="bg-zinc-900">English</option>
-                  <option value="General Studies" className="bg-zinc-900">General Studies</option>
+                  <option value="" className="bg-zinc-950 text-zinc-400">Select subject</option>
+                  <option value="English" className="bg-zinc-950">English</option>
+                  <option value="General Studies" className="bg-zinc-950">General Studies</option>
                 </select>
               </div>
             </div>
@@ -253,7 +276,9 @@ export default function NewTestPage() {
             {/* Grid Group 3: Topic & Duration */}
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="topic" className="text-zinc-300 font-medium">Topic</Label>
+                <Label htmlFor="topic" className={labelClass}>
+                  Topic
+                </Label>
                 <select
                   id="topic"
                   name="topic"
@@ -261,14 +286,15 @@ export default function NewTestPage() {
                   onChange={handleChange}
                   disabled={!form.subject}
                   required
-                  className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 transition-all"
+                  className={`${selectClass} disabled:cursor-not-allowed disabled:opacity-40`}
                 >
-                  <option value="" className="bg-zinc-900 text-zinc-500">
+                  <option value="" className="bg-zinc-950 text-zinc-400">
                     {form.subject ? "Select topic" : "Select subject first"}
                   </option>
+
                   {form.subject &&
                     subjects[form.subject].map((topic) => (
-                      <option key={topic} value={topic} className="bg-zinc-900">
+                      <option key={topic} value={topic} className="bg-zinc-950">
                         {topic}
                       </option>
                     ))}
@@ -276,7 +302,7 @@ export default function NewTestPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="durationMinutes" className="text-zinc-300 font-medium">
+                <Label htmlFor="durationMinutes" className={labelClass}>
                   Duration (minutes)
                 </Label>
                 <Input
@@ -288,7 +314,7 @@ export default function NewTestPage() {
                   value={form.durationMinutes}
                   onChange={handleChange}
                   required
-                  className="bg-zinc-950/60 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all"
+                  className={inputClass}
                 />
               </div>
             </div>
@@ -296,7 +322,7 @@ export default function NewTestPage() {
             {/* Grid Group 4: Marks Per Question & Negative Marking */}
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="marksPerQuestion" className="text-zinc-300 font-medium">
+                <Label htmlFor="marksPerQuestion" className={labelClass}>
                   Marks Per Question
                 </Label>
                 <Input
@@ -309,12 +335,12 @@ export default function NewTestPage() {
                   onChange={handleChange}
                   placeholder="e.g. 2"
                   required
-                  className="bg-zinc-950/60 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all"
+                  className={inputClass}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="negativeMarks" className="text-zinc-300 font-medium">
+                <Label htmlFor="negativeMarks" className={labelClass}>
                   Negative Marking
                 </Label>
                 <Input
@@ -327,39 +353,41 @@ export default function NewTestPage() {
                   onChange={handleChange}
                   placeholder="e.g. 0.50"
                   required
-                  className="bg-zinc-950/60 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all"
+                  className={inputClass}
                 />
               </div>
             </div>
 
             {/* Status */}
             <div className="space-y-2">
-              <Label htmlFor="status" className="text-zinc-300 font-medium">Status</Label>
+              <Label htmlFor="status" className={labelClass}>
+                Status
+              </Label>
               <select
                 id="status"
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className={selectClass}
               >
-                <option value="draft" className="bg-zinc-900">Draft</option>
-                <option value="published" className="bg-zinc-900">Published</option>
+                <option value="draft" className="bg-zinc-950">Draft</option>
+                <option value="published" className="bg-zinc-950">Published</option>
               </select>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs font-medium text-rose-400">
                 {error}
               </div>
             )}
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800/60">
+            <div className="flex justify-end gap-3 border-t border-zinc-800/80 pt-6">
               <Button
                 type="button"
                 variant="outline"
-                className="bg-transparent border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-white transition-all"
+                className="border-zinc-800 bg-transparent text-zinc-300 transition-all hover:bg-zinc-800 hover:text-white rounded-xl cursor-pointer text-xs font-semibold"
                 onClick={() => router.push("/tests")}
               >
                 Cancel
@@ -368,7 +396,7 @@ export default function NewTestPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all disabled:opacity-50"
+                className="bg-emerald-600 font-bold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50 rounded-xl cursor-pointer text-xs px-5"
               >
                 {loading ? (
                   <>
@@ -380,6 +408,7 @@ export default function NewTestPage() {
                 )}
               </Button>
             </div>
+
           </form>
         </CardContent>
       </Card>

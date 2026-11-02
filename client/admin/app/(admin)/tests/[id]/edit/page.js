@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -152,48 +153,64 @@ export default function EditTestPage() {
     }
   };
 
+  const inputClass =
+    "border-zinc-700 bg-zinc-950 text-zinc-100 placeholder:text-zinc-500 focus-visible:border-emerald-500 focus-visible:ring-emerald-500";
+
+  const selectClass =
+    "flex h-10 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500";
+
+  const labelClass = "font-medium text-zinc-300";
+
   if (loading) {
     return (
-      <div className="p-8 text-muted-foreground">
+      <div className="min-h-screen bg-zinc-950 p-8 text-zinc-400">
         Loading test...
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="min-h-screen space-y-6 bg-zinc-950 p-6 text-zinc-100 md:p-8">
+
+      {/* Header */}
       <div>
         <Button
           variant="ghost"
-          className="-ml-3 mb-4"
+          className="-ml-3 mb-4 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
           onClick={() => router.push("/tests")}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Tests
         </Button>
 
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-3xl font-bold tracking-tight text-white">
           Edit Test
         </h1>
 
-        <p className="mt-1 text-muted-foreground">
+        <p className="mt-1 text-zinc-400">
           Update the test details.
         </p>
       </div>
 
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle>Test Details</CardTitle>
+      {/* Form Card */}
+      <Card className="max-w-2xl border-zinc-800 bg-zinc-900 text-zinc-100 shadow-xl">
+        <CardHeader className="border-b border-zinc-800">
+          <CardTitle className="text-white">
+            Test Details
+          </CardTitle>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pt-6">
           {error ? (
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-rose-400">{error}</p>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+
               {/* Title */}
               <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title" className={labelClass}>
+                  Title
+                </Label>
 
                 <Input
                   id="title"
@@ -201,12 +218,15 @@ export default function EditTestPage() {
                   value={form.title}
                   onChange={handleChange}
                   required
+                  className={inputClass}
                 />
               </div>
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className={labelClass}>
+                  Description
+                </Label>
 
                 <textarea
                   id="description"
@@ -214,13 +234,15 @@ export default function EditTestPage() {
                   value={form.description}
                   onChange={handleChange}
                   rows={4}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="flex w-full resize-none rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-all placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               {/* Category */}
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category" className={labelClass}>
+                  Category
+                </Label>
 
                 <Input
                   id="category"
@@ -228,12 +250,15 @@ export default function EditTestPage() {
                   value={form.category}
                   onChange={handleChange}
                   required
+                  className={inputClass}
                 />
               </div>
 
               {/* Subject */}
               <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
+                <Label htmlFor="subject" className={labelClass}>
+                  Subject
+                </Label>
 
                 <select
                   id="subject"
@@ -241,7 +266,7 @@ export default function EditTestPage() {
                   value={form.subject}
                   onChange={handleSubjectChange}
                   required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className={selectClass}
                 >
                   <option value="">Select subject</option>
                   <option value="English">English</option>
@@ -253,7 +278,9 @@ export default function EditTestPage() {
 
               {/* Topic */}
               <div className="space-y-2">
-                <Label htmlFor="topic">Topic</Label>
+                <Label htmlFor="topic" className={labelClass}>
+                  Topic
+                </Label>
 
                 <select
                   id="topic"
@@ -262,7 +289,7 @@ export default function EditTestPage() {
                   onChange={handleChange}
                   disabled={!form.subject}
                   required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  className={`${selectClass} disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   <option value="">
                     {form.subject
@@ -281,9 +308,10 @@ export default function EditTestPage() {
 
               {/* Duration */}
               <div className="space-y-2">
-                <Label htmlFor="durationMinutes">
+                <Label htmlFor="durationMinutes" className={labelClass}>
                   Duration (minutes)
                 </Label>
+
                 <Input
                   id="durationMinutes"
                   name="durationMinutes"
@@ -292,12 +320,13 @@ export default function EditTestPage() {
                   value={form.durationMinutes}
                   onChange={handleChange}
                   required
+                  className={inputClass}
                 />
               </div>
 
-              {/* marks */}
+              {/* Marks */}
               <div className="space-y-2">
-                <Label htmlFor="marksPerQuestion">
+                <Label htmlFor="marksPerQuestion" className={labelClass}>
                   Marks Per Question
                 </Label>
 
@@ -310,11 +339,13 @@ export default function EditTestPage() {
                   value={form.marksPerQuestion}
                   onChange={handleChange}
                   required
+                  className={inputClass}
                 />
               </div>
 
+              {/* Negative Marks */}
               <div className="space-y-2">
-                <Label htmlFor="negativeMarks">
+                <Label htmlFor="negativeMarks" className={labelClass}>
                   Negative Marking
                 </Label>
 
@@ -327,19 +358,22 @@ export default function EditTestPage() {
                   value={form.negativeMarks}
                   onChange={handleChange}
                   required
+                  className={inputClass}
                 />
               </div>
 
               {/* Status */}
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status" className={labelClass}>
+                  Status
+                </Label>
 
                 <select
                   id="status"
                   name="status"
                   value={form.status}
                   onChange={handleChange}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className={selectClass}
                 >
                   <option value="draft">Draft</option>
                   <option value="published">Published</option>
@@ -347,24 +381,31 @@ export default function EditTestPage() {
               </div>
 
               {error && (
-                <p className="text-sm text-destructive">
+                <p className="text-sm text-rose-400">
                   {error}
                 </p>
               )}
 
-              <div className="flex justify-end gap-3">
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 border-t border-zinc-800 pt-5">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.push("/tests")}
+                  className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800 hover:text-white"
                 >
                   Cancel
                 </Button>
 
-                <Button type="submit" disabled={saving}>
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
+
             </form>
           )}
         </CardContent>

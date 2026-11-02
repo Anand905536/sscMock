@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -31,6 +32,15 @@ const initialForm = {
 
   difficulty: "medium",
 };
+
+const inputClasses =
+  "border-zinc-700 bg-zinc-950 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500";
+
+const selectClasses =
+  "flex h-10 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50";
+
+const textareaClasses =
+  "flex min-h-[90px] w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-emerald-500";
 
 export default function NewQuestionPage() {
   const router = useRouter();
@@ -170,22 +180,23 @@ export default function NewQuestionPage() {
   ];
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen w-full bg-zinc-950 p-6 text-zinc-100 md:p-8">
       {/* Header */}
       <div className="mb-8 flex items-center gap-4">
         <Button
           variant="outline"
           size="icon"
+          className="border-zinc-700 bg-zinc-900 text-zinc-200 hover:border-emerald-500 hover:bg-zinc-800 hover:text-emerald-400"
           onClick={() => router.push("/questions")}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight text-white">
             Add Question
           </h1>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mt-1 text-zinc-400">
             Create a bilingual question for your mock test.
           </p>
         </div>
@@ -193,24 +204,28 @@ export default function NewQuestionPage() {
 
       {/* Error */}
       {error && (
-        <Card className="mb-6 border-destructive/30">
+        <Card className="mb-6 border-rose-500/30 bg-zinc-900 text-zinc-100">
           <CardContent className="pt-6">
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-rose-400">{error}</p>
           </CardContent>
         </Card>
       )}
 
-      <Card className="max-w-4xl">
-        <CardHeader>
-          <CardTitle>Question Details</CardTitle>
+      <Card className="max-w-4xl border-zinc-800 bg-zinc-900 text-zinc-100 shadow-lg">
+        <CardHeader className="border-b border-zinc-800">
+          <CardTitle className="text-white">
+            Question Details
+          </CardTitle>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-7">
 
             {/* Test */}
             <div className="space-y-2">
-              <Label htmlFor="test">Test</Label>
+              <Label htmlFor="test" className="text-zinc-300">
+                Test
+              </Label>
 
               <select
                 id="test"
@@ -219,7 +234,7 @@ export default function NewQuestionPage() {
                 onChange={handleChange}
                 required
                 disabled={loadingTests}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={selectClasses}
               >
                 <option value="">
                   {loadingTests ? "Loading tests..." : "Select a test"}
@@ -236,15 +251,17 @@ export default function NewQuestionPage() {
             {/* Question */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-semibold">Question</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-sm font-semibold text-white">
+                  Question
+                </h3>
+                <p className="text-sm text-zinc-400">
                   Enter the question in both languages.
                 </p>
               </div>
 
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="questionTextEn">
+                  <Label htmlFor="questionTextEn" className="text-zinc-300">
                     Question (English)
                   </Label>
 
@@ -256,12 +273,12 @@ export default function NewQuestionPage() {
                     required
                     rows={3}
                     placeholder="Enter question in English..."
-                    className="flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    className={textareaClasses}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="questionTextHi">
+                  <Label htmlFor="questionTextHi" className="text-zinc-300">
                     प्रश्न (हिंदी)
                   </Label>
 
@@ -273,7 +290,7 @@ export default function NewQuestionPage() {
                     required
                     rows={3}
                     placeholder="प्रश्न हिंदी में लिखें..."
-                    className="flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    className={textareaClasses}
                   />
                 </div>
               </div>
@@ -282,8 +299,10 @@ export default function NewQuestionPage() {
             {/* Options */}
             <div className="space-y-5">
               <div>
-                <h3 className="text-sm font-semibold">Answer Options</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-sm font-semibold text-white">
+                  Answer Options
+                </h3>
+                <p className="text-sm text-zinc-400">
                   Add all four options in English and Hindi.
                 </p>
               </div>
@@ -291,21 +310,21 @@ export default function NewQuestionPage() {
               {optionFields.map((option) => (
                 <div
                   key={option.letter}
-                  className="rounded-xl border border-border p-4 space-y-4"
+                  className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-sm font-bold text-emerald-400">
                       {option.letter}
                     </span>
 
-                    <h4 className="text-sm font-semibold">
+                    <h4 className="text-sm font-semibold text-zinc-100">
                       Option {option.letter}
                     </h4>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor={option.en}>
+                      <Label htmlFor={option.en} className="text-zinc-300">
                         English
                       </Label>
 
@@ -316,11 +335,12 @@ export default function NewQuestionPage() {
                         onChange={handleChange}
                         placeholder={`Enter option ${option.letter} in English`}
                         required
+                        className={inputClasses}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor={option.hi}>
+                      <Label htmlFor={option.hi} className="text-zinc-300">
                         हिंदी
                       </Label>
 
@@ -331,6 +351,7 @@ export default function NewQuestionPage() {
                         onChange={handleChange}
                         placeholder={`विकल्प ${option.letter} हिंदी में लिखें`}
                         required
+                        className={inputClasses}
                       />
                     </div>
                   </div>
@@ -340,7 +361,7 @@ export default function NewQuestionPage() {
 
             {/* Correct Answer */}
             <div className="space-y-2">
-              <Label htmlFor="correctAnswer">
+              <Label htmlFor="correctAnswer" className="text-zinc-300">
                 Correct Answer
               </Label>
 
@@ -350,7 +371,7 @@ export default function NewQuestionPage() {
                 value={form.correctAnswer}
                 onChange={handleChange}
                 required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={selectClasses}
               >
                 <option value="">Select correct answer</option>
                 <option value="0">Option A</option>
@@ -359,7 +380,7 @@ export default function NewQuestionPage() {
                 <option value="3">Option D</option>
               </select>
 
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-zinc-500">
                 Select the correct option. This selection remains the same
                 in both languages.
               </p>
@@ -367,14 +388,16 @@ export default function NewQuestionPage() {
 
             {/* Difficulty */}
             <div className="space-y-2">
-              <Label htmlFor="difficulty">Difficulty</Label>
+              <Label htmlFor="difficulty" className="text-zinc-300">
+                Difficulty
+              </Label>
 
               <select
                 id="difficulty"
                 name="difficulty"
                 value={form.difficulty}
                 onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={selectClasses}
               >
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
@@ -385,16 +408,16 @@ export default function NewQuestionPage() {
             {/* Explanation */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-semibold">
+                <h3 className="text-sm font-semibold text-white">
                   Explanation (Optional)
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-zinc-400">
                   Provide the explanation in both languages.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="explanationEn">
+                <Label htmlFor="explanationEn" className="text-zinc-300">
                   Explanation (English)
                 </Label>
 
@@ -405,12 +428,12 @@ export default function NewQuestionPage() {
                   onChange={handleChange}
                   rows={3}
                   placeholder="Explain the correct answer in English..."
-                  className="flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className={textareaClasses}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="explanationHi">
+                <Label htmlFor="explanationHi" className="text-zinc-300">
                   व्याख्या (हिंदी)
                 </Label>
 
@@ -421,22 +444,27 @@ export default function NewQuestionPage() {
                   onChange={handleChange}
                   rows={3}
                   placeholder="सही उत्तर की व्याख्या हिंदी में लिखें..."
-                  className="flex min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className={textareaClasses}
                 />
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 border-t pt-6">
+            <div className="flex justify-end gap-3 border-t border-zinc-800 pt-6">
               <Button
                 type="button"
                 variant="outline"
+                className="border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 hover:text-white"
                 onClick={() => router.push("/questions")}
               >
                 Cancel
               </Button>
 
-              <Button type="submit" disabled={saving || loadingTests}>
+              <Button
+                type="submit"
+                disabled={saving || loadingTests}
+                className="bg-emerald-600 text-white hover:bg-emerald-700"
+              >
                 {saving ? "Saving..." : "Create Question"}
               </Button>
             </div>

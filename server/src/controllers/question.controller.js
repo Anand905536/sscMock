@@ -116,7 +116,6 @@ export const getQuestionsByTest = async (req, res) => {
     });
   }
 };
-
 // newly added 
 export const getQuestionById = async (req, res) => {
     try {
@@ -143,47 +142,102 @@ export const getQuestionById = async (req, res) => {
     }
 };
 
+
 export const updateQuestion = async (req, res) => {
-    try {
-        const { test, questionText, options, correctAnswer, explanation, difficulty, } = req.body
+  try {
+    const {
+      test,
+      questionText,
+      options,
+      correctAnswer,
+      explanation,
+      difficulty,
+    } = req.body;
 
-        if (!test || !questionText || !options || !correctAnswer) {
-            return res.status(400).json({
-                message: "Test, questionText, options and correctAnswer are required",
-            })
-        }
-
-        if (!options.includes(correctAnswer)) {
-
-            return res.status(400).json({
-                message: "correct answer must be one of the options"
-            })
-        }
-
-        const question = await Question.findByIdAndUpdate(req.params.id,
-            { test, questionText, options, correctAnswer, explanation, difficulty },
-            {
-                new: true,
-                runValidators: true
-            })
-
-        if (!question) {
-            return res.status(404).json({
-                message: "Question not found"
-            })
-        }
-
-        res.status(200).json({
-            message: "Question updated successfully",
-            question,
-        })
-    } catch (err) {
-        res.status(500).json({
-            message: "Failed to update question",
-            error: err.message
-        })
+    // Required fields validation
+    if (!test || !questionText || !options || correctAnswer === undefined || correctAnswer === null) {
+      return res.status(400).json({
+        message: "Test, questionText, options and correctAnswer are required",
+      });
     }
-}
+
+    // Validate bilingual question text
+    if (
+      !questionText.en?.trim() ||
+      !questionText.hi?.trim()
+    ) {
+      return res.status(400).json({
+        message: "Question text is required in both English and Hindi",
+      });
+    }
+
+    // Validate options
+    if (!Array.isArray(options) || options.length !== 4) {
+      return res.status(400).json({
+        message: "Exactly four options are required",
+      });
+    }
+
+    // Validate bilingual options
+    const invalidOption = options.some(
+      (option) => !option.en?.trim() || !option.hi?.trim()
+    );
+
+    if (invalidOption) {
+      return res.status(400).json({
+        message: "All options must have English and Hindi text",
+      });
+    }
+
+    // Convert correctAnswer to number
+    const answerIndex = Number(correctAnswer);
+
+    // Validate correct answer index (A=0, B=1, C=2, D=3)
+    if (
+      !Number.isInteger(answerIndex) ||
+      answerIndex < 0 ||
+      answerIndex > 3
+    ) {
+      return res.status(400).json({
+        message: "Correct answer must be a valid option index (0-3)",
+      });
+    }
+
+    const question = await Question.findByIdAndUpdate(
+      req.params.id,
+      {
+        test,
+        questionText,
+        options,
+        correctAnswer: answerIndex,
+        explanation,
+        difficulty,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!question) {
+      return res.status(404).json({
+        message: "Question not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Question updated successfully",
+      question,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to update question",
+      error: err.message,
+    });
+  }
+};
+
 
 export const deleteQuestion = async (req, res) => {
     try {

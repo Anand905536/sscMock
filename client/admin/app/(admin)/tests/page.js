@@ -48,7 +48,7 @@ export default function TestsPage() {
 
       // console.log("called", data.tests)
 
-      setTests(data || []);
+      setTests(Array.isArray(data) ? data : data.tests || []);
     } catch (err) {
       setError(err.message || "Failed to load tests");
     } finally {
@@ -84,29 +84,33 @@ export default function TestsPage() {
   };
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="min-h-screen space-y-6 bg-zinc-950 p-6 md:p-8 text-zinc-100 selection:bg-emerald-500 selection:text-white">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight text-white">
             Tests
           </h1>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mt-1 text-sm text-zinc-400">
             Create and manage mock tests.
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2.5">
           <Button
             variant="outline"
             onClick={fetchTests}
             disabled={loading}
+            className="border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white cursor-pointer"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
 
-          <Button onClick={() => router.push("/tests/new")}>
+          <Button
+            onClick={() => router.push("/tests/new")}
+            className="bg-emerald-600 text-white hover:bg-emerald-700 font-bold cursor-pointer shadow-sm"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Create Test
           </Button>
@@ -114,27 +118,32 @@ export default function TestsPage() {
       </div>
 
       {/* Tests table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Tests</CardTitle>
+      <Card className="border-zinc-800/80 bg-zinc-900 text-zinc-100 shadow-xl shadow-zinc-950/40">
+        <CardHeader className="border-b border-zinc-800/80">
+          <CardTitle className="text-white text-base font-bold">
+            All Tests
+          </CardTitle>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pt-6">
           {loading ? (
-            <div className="py-10 text-center text-muted-foreground">
+            <div className="py-10 text-center text-zinc-400 text-sm">
               Loading tests...
             </div>
           ) : error ? (
-            <div className="py-10 text-center text-destructive">
+            <div className="py-10 text-center text-rose-400 text-sm">
               {error}
             </div>
           ) : tests.length === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-muted-foreground">
+            <div className="py-12 text-center">
+              <p className="text-zinc-400 text-sm">
                 No tests found.
               </p>
 
-              <Button className="mt-4">
+              <Button
+                onClick={() => router.push("/tests/new")}
+                className="mt-4 bg-emerald-600 text-white hover:bg-emerald-700 font-bold cursor-pointer text-xs"
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Create your first test
               </Button>
@@ -142,39 +151,42 @@ export default function TestsPage() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">
+                <TableRow className="border-zinc-800/80 hover:bg-transparent">
+                  <TableHead className="text-zinc-400 text-xs font-semibold">Title</TableHead>
+                  <TableHead className="text-zinc-400 text-xs font-semibold">Category</TableHead>
+                  <TableHead className="text-zinc-400 text-xs font-semibold">Duration</TableHead>
+                  <TableHead className="text-zinc-400 text-xs font-semibold">Status</TableHead>
+                  <TableHead className="text-right text-zinc-400 text-xs font-semibold">
                     Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
 
-              <TableBody>
+              <TableBody className="divide-y divide-zinc-800/60">
                 {tests.map((test) => (
-                  <TableRow key={test._id}>
-                    <TableCell className="font-medium">
+                  <TableRow
+                    key={test._id}
+                    className="border-zinc-800/60 transition-colors hover:bg-zinc-800/50"
+                  >
+                    <TableCell className="font-medium text-white text-sm">
                       {test.title}
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className="text-zinc-300 text-sm">
                       {test.category || "—"}
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className="text-zinc-300 text-sm font-mono">
                       {test.durationMinutes} min
                     </TableCell>
 
                     <TableCell>
                       <Badge
-                        variant={
+                        className={`font-semibold text-[11px] ${
                           test.status === "published"
-                            ? "default"
-                            : "secondary"
-                        }
+                            ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/15"
+                            : "border border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-800"
+                        }`}
                       >
                         {test.status}
                       </Badge>
@@ -186,18 +198,19 @@ export default function TestsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => router.push(`/tests/${test._id}/edit`)}
+                          className="border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white cursor-pointer h-8 text-xs font-semibold"
                         >
-                          <Pencil className="mr-2 h-4 w-4" />
+                          <Pencil className="mr-1.5 h-3.5 w-3.5" />
                           Edit
                         </Button>
+
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            handleDelete(test._id)
-                          }
+                          onClick={() => handleDelete(test._id)}
+                          className="border-rose-500/30 bg-rose-500/10 text-rose-400 hover:border-rose-500/50 hover:bg-rose-500/20 hover:text-rose-300 cursor-pointer h-8 text-xs font-semibold"
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                           Delete
                         </Button>
                       </div>
