@@ -7,25 +7,24 @@ import { LayoutGrid, Clock, Play, HelpCircle, Sun, Moon } from "lucide-react";
 import { ThreeDots } from "react-loader-spinner";
 import { apiRequest } from "@/lib/api";
 import { useTheme } from "@/context/ThemeContext";
-import {ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 
 const topicMap = {
     english: {
-        "vocabulary": "Vocabulary",
+        "homonyms": "Homonyms",
         "spot-the-error": "Spot the Error",
         "para-jumbles": "Para Jumbles",
         "fill-in-the-blanks": "Fill in the Blanks",
         "grammar": "Grammar",
         "synonyms": "Synonyms",
         "antonyms": "Antonyms",
-        "idioms-&-phrases": "Idioms & Phrases",
+        "idioms": "Idioms",
         "one-word-substitution": "One Word Substitution",
-        "active-&-passive-voice": "Active & Passive Voice",
-        "reading-comprehension": "Reading Comprehension",
+        "active-passive-voice": "Active & Passive Voice",
         "cloze-test": "Cloze Test",
         "sentence-improvement": "Sentence Improvement",
-        "direct-&-indirect-speech": "Direct & Indirect Speech",
-        "spelling": "Spelling",
+        "narration": "Narration",
+        "spelling-check": "Spelling check",
     },
 
     "general-studies": {
@@ -58,7 +57,13 @@ export default function TopicTestsPage() {
     const { darkMode, isThemeReady } = useTheme();
 
     const subjectKey = subject?.toLowerCase();
-    const topicName = topicMap[subjectKey]?.[topic];
+    const normalizedTopic = decodeURIComponent(topic || "")
+        .toLowerCase()
+        .replace(/&/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
+    const topicName = topicMap[subjectKey]?.[normalizedTopic];
 
     useEffect(() => {
         const fetchTests = async () => {
@@ -69,10 +74,17 @@ export default function TopicTestsPage() {
                     return;
                 }
 
+                console.log("Subject:", subject);
+                console.log("Topic slug:", topic);
+                console.log("Subject key:", subjectKey);
+                console.log("Topic name:", topicName);
+
                 if (!topicName) {
                     setError("Topic not found.");
                     return;
                 }
+
+
 
                 const params = new URLSearchParams({
                     subject:
@@ -139,7 +151,7 @@ export default function TopicTestsPage() {
             : "bg-slate-50/60 text-slate-800 selection:bg-emerald-500 selection:text-white"
             }`}>
 
-                  <header className={`sticky top-0 z-40 flex h-16 items-center justify-between px-6 backdrop-blur-md shadow-xs transition-colors duration-300 ${darkMode ? "bg-zinc-900/90 text-white" : "border-b border-gray-200 bg-white/90 text-gray-900"
+            <header className={`sticky top-0 z-40 flex h-16 items-center justify-between px-6 backdrop-blur-md shadow-xs transition-colors duration-300 ${darkMode ? "bg-zinc-900/90 text-white" : "border-b border-gray-200 bg-white/90 text-gray-900"
                 }`}>
                 <div className="flex items-center gap-3">
                     <button

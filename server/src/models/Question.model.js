@@ -9,13 +9,13 @@ const questionSchema = new mongoose.Schema({
 
   questionText: {
     en: { type: String, required: true, trim: true },
-    hi: { type: String, required: true, trim: true },
+    hi: { type: String, default: "", trim: true },
   },
 
   options: [
     {
       en: { type: String, required: true, trim: true },
-      hi: { type: String, required: true, trim: true },
+      hi: { type: String, default: "", trim: true },
     },
   ],
 

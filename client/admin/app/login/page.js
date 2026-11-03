@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -52,41 +53,51 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-zinc-950 px-4 py-10 text-zinc-100">
+
+      {/* Background Effects */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-emerald-600/10 blur-[120px]" />
+        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-emerald-500/10 blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-md">
+
         {/* Brand */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2a2a2a] bg-[#141414]">
-            <ShieldCheck className="h-7 w-7 text-[#f5f5f5]" />
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-black/30">
+            <ShieldCheck className="h-8 w-8 text-emerald-400" />
           </div>
 
-          <h1 className="text-3xl font-semibold tracking-tight">
-            sscMock
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            SubjectWise
           </h1>
 
-          <p className="mt-2 text-sm text-[#a3a3a3]">
+          <p className="mt-2 text-sm text-zinc-400">
             Admin Panel
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="rounded-2xl border border-[#292929] bg-[#141414] p-7 shadow-2xl sm:p-8">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-7 shadow-2xl shadow-black/40 sm:p-8">
+
           <div className="mb-7">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-white">
               Welcome back
             </h2>
 
-            <p className="mt-1.5 text-sm text-[#a3a3a3]">
-              Sign in to manage your SSC mock test platform.
+            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              Sign in to manage your SubjectWise platform.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+
             {/* Email */}
             <div>
               <label
                 htmlFor="email"
-                className="mb-2 block text-sm font-medium text-[#d4d4d4]"
+                className="mb-2 block text-sm font-medium text-zinc-300"
               >
                 Email
               </label>
@@ -98,7 +109,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your admin email"
                 required
-                className="h-11 w-full rounded-lg border border-[#303030] bg-[#0d0d0d] px-3.5 text-sm text-[#f5f5f5] outline-none placeholder:text-[#666] transition focus:border-[#737373] focus:ring-1 focus:ring-[#737373]"
+                className="h-12 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 hover:border-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
 
@@ -106,7 +117,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="mb-2 block text-sm font-medium text-[#d4d4d4]"
+                className="mb-2 block text-sm font-medium text-zinc-300"
               >
                 Password
               </label>
@@ -119,13 +130,13 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
-                  className="h-11 w-full rounded-lg border border-[#303030] bg-[#0d0d0d] px-3.5 pr-11 text-sm text-[#f5f5f5] outline-none placeholder:text-[#666] transition focus:border-[#737373] focus:ring-1 focus:ring-[#737373]"
+                  className="h-12 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 pr-12 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 hover:border-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#777] transition hover:text-[#f5f5f5]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-500 transition hover:text-emerald-400"
                   aria-label={
                     showPassword
                       ? "Hide password"
@@ -133,9 +144,9 @@ export default function LoginPage() {
                   }
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4.5 w-4.5" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="h-4.5 w-4.5" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
@@ -143,7 +154,7 @@ export default function LoginPage() {
 
             {/* Error */}
             {error && (
-              <div className="rounded-lg border border-red-900/50 bg-red-950/20 px-3.5 py-3 text-sm text-red-400">
+              <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
                 {error}
               </div>
             )}
@@ -152,17 +163,22 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="h-11 w-full rounded-lg bg-[#f5f5f5] text-sm font-semibold text-[#0a0a0a] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-12 w-full rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Logging in..." : "Login"}
             </button>
+
           </form>
         </div>
 
         {/* Footer */}
-        <p className="mt-6 text-center text-xs text-[#666]">
-          Authorized administrators only
+        <p className="mt-6 text-center text-xs text-zinc-500">
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+            Authorized administrators only
+          </span>
         </p>
+
       </div>
     </main>
   );

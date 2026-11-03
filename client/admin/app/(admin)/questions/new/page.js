@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,9 +6,15 @@ import { ArrowLeft } from "lucide-react";
 
 import { apiRequest } from "../../../../lib/api";
 import { Button } from "../../../../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../../components/ui/card";
 import { Input } from "../../../../components/ui/input";
 import { Label } from "../../../../components/ui/label";
+import RichTextEditor from "../../../../components/RichTextEditor";
 
 const initialForm = {
   test: "",
@@ -38,9 +43,6 @@ const inputClasses =
 
 const selectClasses =
   "flex h-10 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50";
-
-const textareaClasses =
-  "flex min-h-[90px] w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-emerald-500";
 
 export default function NewQuestionPage() {
   const router = useRouter();
@@ -88,6 +90,13 @@ export default function NewQuestionPage() {
     }));
   };
 
+  const handleRichTextChange = (name, value) => {
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -121,28 +130,37 @@ export default function NewQuestionPage() {
         },
       ];
 
+      if (!form.test) {
+        setError("Please select a test.");
+        return;
+      }
+
       if (!form.correctAnswer) {
         setError("Please select the correct answer.");
         return;
       }
 
+      // Only English question and options are required.
       if (
-        !form.questionTextEn.trim() ||
-        !form.questionTextHi.trim() ||
-        options.some((option) => !option.en || !option.hi)
+        !form.questionTextEn.replace(/<[^>]*>/g, "").trim() ||
+        options.some((option) => !option.en)
       ) {
-        setError("Please fill in both English and Hindi question and options.");
+        setError(
+          "Please fill in the English question and all four English options."
+        );
         return;
       }
 
       const payload = {
         test: form.test,
 
+        // Rich-text HTML is stored in the existing string fields.
         questionText: {
           en: form.questionTextEn.trim(),
           hi: form.questionTextHi.trim(),
         },
 
+        // Options remain plain text.
         options,
 
         // Option A = 0, B = 1, C = 2, D = 3
@@ -197,7 +215,7 @@ export default function NewQuestionPage() {
             Add Question
           </h1>
           <p className="mt-1 text-zinc-400">
-            Create a bilingual question for your mock test.
+            Create a question in English. Hindi translation is optional.
           </p>
         </div>
       </div>
@@ -220,7 +238,6 @@ export default function NewQuestionPage() {
 
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-7">
-
             {/* Test */}
             <div className="space-y-2">
               <Label htmlFor="test" className="text-zinc-300">
@@ -255,42 +272,36 @@ export default function NewQuestionPage() {
                   Question
                 </h3>
                 <p className="text-sm text-zinc-400">
-                  Enter the question in both languages.
+                  English is required. Hindi is optional.
                 </p>
               </div>
 
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="questionTextEn" className="text-zinc-300">
-                    Question (English)
+                  <Label className="text-zinc-300">
+                    Question (English) *
                   </Label>
 
-                  <textarea
-                    id="questionTextEn"
-                    name="questionTextEn"
+                  <RichTextEditor
                     value={form.questionTextEn}
-                    onChange={handleChange}
-                    required
-                    rows={3}
+                    onChange={(value) =>
+                      handleRichTextChange("questionTextEn", value)
+                    }
                     placeholder="Enter question in English..."
-                    className={textareaClasses}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="questionTextHi" className="text-zinc-300">
-                    प्रश्न (हिंदी)
+                  <Label className="text-zinc-300">
+                    प्रश्न (हिंदी) (Optional)
                   </Label>
 
-                  <textarea
-                    id="questionTextHi"
-                    name="questionTextHi"
+                  <RichTextEditor
                     value={form.questionTextHi}
-                    onChange={handleChange}
-                    required
-                    rows={3}
-                    placeholder="प्रश्न हिंदी में लिखें..."
-                    className={textareaClasses}
+                    onChange={(value) =>
+                      handleRichTextChange("questionTextHi", value)
+                    }
+                    placeholder="प्रश्न हिंदी में लिखें (वैकल्पिक)..."
                   />
                 </div>
               </div>
@@ -303,7 +314,7 @@ export default function NewQuestionPage() {
                   Answer Options
                 </h3>
                 <p className="text-sm text-zinc-400">
-                  Add all four options in English and Hindi.
+                  All four English options are required. Hindi is optional.
                 </p>
               </div>
 
@@ -325,7 +336,7 @@ export default function NewQuestionPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor={option.en} className="text-zinc-300">
-                        English
+                        English *
                       </Label>
 
                       <Input
@@ -341,7 +352,7 @@ export default function NewQuestionPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor={option.hi} className="text-zinc-300">
-                        हिंदी
+                        हिंदी (Optional)
                       </Label>
 
                       <Input
@@ -349,8 +360,7 @@ export default function NewQuestionPage() {
                         name={option.hi}
                         value={form[option.hi]}
                         onChange={handleChange}
-                        placeholder={`विकल्प ${option.letter} हिंदी में लिखें`}
-                        required
+                        placeholder={`विकल्प ${option.letter} हिंदी में लिखें (वैकल्पिक)`}
                         className={inputClasses}
                       />
                     </div>
@@ -412,39 +422,35 @@ export default function NewQuestionPage() {
                   Explanation (Optional)
                 </h3>
                 <p className="text-sm text-zinc-400">
-                  Provide the explanation in both languages.
+                  Explanation is optional. You can enter English, Hindi, or both.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="explanationEn" className="text-zinc-300">
+                <Label className="text-zinc-300">
                   Explanation (English)
                 </Label>
 
-                <textarea
-                  id="explanationEn"
-                  name="explanationEn"
+                <RichTextEditor
                   value={form.explanationEn}
-                  onChange={handleChange}
-                  rows={3}
+                  onChange={(value) =>
+                    handleRichTextChange("explanationEn", value)
+                  }
                   placeholder="Explain the correct answer in English..."
-                  className={textareaClasses}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="explanationHi" className="text-zinc-300">
-                  व्याख्या (हिंदी)
+                <Label className="text-zinc-300">
+                  व्याख्या (हिंदी) (Optional)
                 </Label>
 
-                <textarea
-                  id="explanationHi"
-                  name="explanationHi"
+                <RichTextEditor
                   value={form.explanationHi}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="सही उत्तर की व्याख्या हिंदी में लिखें..."
-                  className={textareaClasses}
+                  onChange={(value) =>
+                    handleRichTextChange("explanationHi", value)
+                  }
+                  placeholder="सही उत्तर की व्याख्या हिंदी में लिखें (वैकल्पिक)..."
                 />
               </div>
             </div>

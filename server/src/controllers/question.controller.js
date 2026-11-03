@@ -1,6 +1,8 @@
-import Question from '../models/Question.model.js'
-import Test from '../models/Test.model.js'
 
+import Question from "../models/Question.model.js";
+import Test from "../models/Test.model.js";
+
+// CREATE QUESTION
 export const createQuestion = async (req, res) => {
   try {
     const {
@@ -12,34 +14,29 @@ export const createQuestion = async (req, res) => {
       difficulty,
     } = req.body;
 
+    // English question and all four English options are required
     if (
       !test ||
-      !questionText?.en ||
-      !questionText?.hi ||
-      !options ||
+      !questionText?.en?.trim() ||
       !Array.isArray(options) ||
       options.length !== 4 ||
-      correctAnswer === undefined
+      options.some((option) => !option.en?.trim()) ||
+      correctAnswer === undefined ||
+      correctAnswer === null
     ) {
       return res.status(400).json({
-        message: "Test, bilingual question, four bilingual options and correctAnswer are required",
+        message:
+          "Test, English question, four English options and correctAnswer are required",
       });
     }
 
-    if (
-      !options.every(
-        (option) => option.en?.trim() && option.hi?.trim()
-      )
-    ) {
-      return res.status(400).json({
-        message: "All options must have English and Hindi text",
-      });
-    }
+    // Validate correct answer index
+    const answerIndex = Number(correctAnswer);
 
     if (
-      !Number.isInteger(correctAnswer) ||
-      correctAnswer < 0 ||
-      correctAnswer > 3
+      !Number.isInteger(answerIndex) ||
+      answerIndex < 0 ||
+      answerIndex > 3
     ) {
       return res.status(400).json({
         message: "Correct answer must be an option index between 0 and 3",
@@ -54,12 +51,26 @@ export const createQuestion = async (req, res) => {
       });
     }
 
+    // Hindi is optional; save empty string if not provided
+    const formattedQuestionText = {
+      en: questionText.en.trim(),
+      hi: questionText.hi?.trim() || "",
+    };
+
+    const formattedOptions = options.map((option) => ({
+      en: option.en.trim(),
+      hi: option.hi?.trim() || "",
+    }));
+
     const question = await Question.create({
       test,
-      questionText,
-      options,
-      correctAnswer,
-      explanation,
+      questionText: formattedQuestionText,
+      options: formattedOptions,
+      correctAnswer: answerIndex,
+      explanation: {
+        en: explanation?.en?.trim() || "",
+        hi: explanation?.hi?.trim() || "",
+      },
       difficulty,
     });
 
@@ -76,25 +87,29 @@ export const createQuestion = async (req, res) => {
   }
 };
 
+
+// GET ALL QUESTIONS
 export const getQuestions = async (req, res) => {
-    try {
-        let query = Question.find().populate("test", "title");
+  try {
+    let query = Question.find().populate("test", "title");
 
-        if (req.user.role !== "admin") {
-            query = query.select("-correctAnswer")
-        }
-
-        const questions = await query
-
-        res.status(200).json(questions)
-    } catch (err) {
-        res.status(500).json({
-            message: "Failed to fetch question",
-            error: err.message
-        })
+    if (req.user.role !== "admin") {
+      query = query.select("-correctAnswer");
     }
-}
 
+    const questions = await query;
+
+    res.status(200).json(questions);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch question",
+      error: err.message,
+    });
+  }
+};
+
+
+// GET QUESTIONS BY TEST
 export const getQuestionsByTest = async (req, res) => {
   try {
     let query = Question.find({
@@ -108,7 +123,6 @@ export const getQuestionsByTest = async (req, res) => {
     const questions = await query;
 
     return res.status(200).json(questions);
-
   } catch (err) {
     return res.status(500).json({
       message: "Failed to fetch test questions",
@@ -116,33 +130,36 @@ export const getQuestionsByTest = async (req, res) => {
     });
   }
 };
-// newly added 
+
+
+// GET QUESTION BY ID
 export const getQuestionById = async (req, res) => {
-    try {
-        let query = Question.findById(req.params.id).populate("test", "title");
+  try {
+    let query = Question.findById(req.params.id).populate("test", "title");
 
-        if (req.user.role !== "admin") {
-            query = query.select("-correctAnswer");
-        }
-
-        const question = await query;
-
-        if (!question) {
-            return res.status(404).json({
-                message: "Question not found",
-            });
-        }
-
-        res.status(200).json(question);
-    } catch (err) {
-        res.status(500).json({
-            message: "Failed to fetch question",
-            error: err.message,
-        });
+    if (req.user.role !== "admin") {
+      query = query.select("-correctAnswer");
     }
+
+    const question = await query;
+
+    if (!question) {
+      return res.status(404).json({
+        message: "Question not found",
+      });
+    }
+
+    res.status(200).json(question);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch question",
+      error: err.message,
+    });
+  }
 };
 
 
+// UPDATE QUESTION
 export const updateQuestion = async (req, res) => {
   try {
     const {
@@ -154,45 +171,25 @@ export const updateQuestion = async (req, res) => {
       difficulty,
     } = req.body;
 
-    // Required fields validation
-    if (!test || !questionText || !options || correctAnswer === undefined || correctAnswer === null) {
-      return res.status(400).json({
-        message: "Test, questionText, options and correctAnswer are required",
-      });
-    }
-
-    // Validate bilingual question text
+    // English question and all four English options are required
     if (
-      !questionText.en?.trim() ||
-      !questionText.hi?.trim()
+      !test ||
+      !questionText?.en?.trim() ||
+      !Array.isArray(options) ||
+      options.length !== 4 ||
+      options.some((option) => !option.en?.trim()) ||
+      correctAnswer === undefined ||
+      correctAnswer === null
     ) {
       return res.status(400).json({
-        message: "Question text is required in both English and Hindi",
+        message:
+          "Test, English question, four English options and correctAnswer are required",
       });
     }
 
-    // Validate options
-    if (!Array.isArray(options) || options.length !== 4) {
-      return res.status(400).json({
-        message: "Exactly four options are required",
-      });
-    }
-
-    // Validate bilingual options
-    const invalidOption = options.some(
-      (option) => !option.en?.trim() || !option.hi?.trim()
-    );
-
-    if (invalidOption) {
-      return res.status(400).json({
-        message: "All options must have English and Hindi text",
-      });
-    }
-
-    // Convert correctAnswer to number
+    // Convert and validate correct answer
     const answerIndex = Number(correctAnswer);
 
-    // Validate correct answer index (A=0, B=1, C=2, D=3)
     if (
       !Number.isInteger(answerIndex) ||
       answerIndex < 0 ||
@@ -203,14 +200,28 @@ export const updateQuestion = async (req, res) => {
       });
     }
 
+    // Hindi is optional; save empty string if not provided
+    const formattedQuestionText = {
+      en: questionText.en.trim(),
+      hi: questionText.hi?.trim() || "",
+    };
+
+    const formattedOptions = options.map((option) => ({
+      en: option.en.trim(),
+      hi: option.hi?.trim() || "",
+    }));
+
     const question = await Question.findByIdAndUpdate(
       req.params.id,
       {
         test,
-        questionText,
-        options,
+        questionText: formattedQuestionText,
+        options: formattedOptions,
         correctAnswer: answerIndex,
-        explanation,
+        explanation: {
+          en: explanation?.en?.trim() || "",
+          hi: explanation?.hi?.trim() || "",
+        },
         difficulty,
       },
       {
@@ -239,25 +250,24 @@ export const updateQuestion = async (req, res) => {
 };
 
 
+// DELETE QUESTION
 export const deleteQuestion = async (req, res) => {
-    try {
-        const question = await Question.findByIdAndDelete(
-            req.params.id
-        )
-        if (!question) {
-            return res.status(404).json({
-                message: "Question not found",
-            })
-        }
-        res.status(200).json({
-            message: "Question delete successfully",
-        })
-    } catch (err) {
-        res.status(500).json({
-            message: "Failed to delete question",
-            error: err.message
-        })
+  try {
+    const question = await Question.findByIdAndDelete(req.params.id);
+
+    if (!question) {
+      return res.status(404).json({
+        message: "Question not found",
+      });
     }
 
-
-}
+    res.status(200).json({
+      message: "Question delete successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to delete question",
+      error: err.message,
+    });
+  }
+};

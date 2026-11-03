@@ -18,16 +18,19 @@ import {
 
 const subjects = {
   English: [
-    "Vocabulary",
-    "Spot the Error",
-    "Para Jumbles",
-    "Fill in the Blanks",
-    "Grammar",
     "Synonyms",
-    "Antonyms",
-    "Idioms & Phrases",
-    "One Word Substitution",
-    "Active & Passive Voice",
+  "Spot the Error",
+  "Para Jumbles",
+  "Fill in the Blanks",
+  "Homonyms",
+  "Antonyms",
+  "Idioms",
+  "One Word Substitution",
+  "Active & Passive Voice",
+  "Cloze Test",
+  "Sentence Improvement",
+  "Narration",
+  "Spelling check",
   ],
 
   "General Studies": [

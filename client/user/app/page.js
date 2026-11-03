@@ -25,7 +25,6 @@ const englishTopics = [
   "Idioms",
   "One Word Substitution",
   "Active & Passive Voice",
-  "Reading Comprehension",
   "Cloze Test",
   "Sentence Improvement",
   "Narration",

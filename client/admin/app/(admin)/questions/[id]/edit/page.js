@@ -15,6 +15,7 @@ import {
 } from "../../../../../components/ui/card";
 import { Input } from "../../../../../components/ui/input";
 import { Label } from "../../../../../components/ui/label";
+import RichTextEditor from "../../../../../components/RichTextEditor";
 
 const initialForm = {
   test: "",
@@ -43,9 +44,6 @@ const inputClasses =
 
 const selectClasses =
   "flex h-10 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500";
-
-const textareaClasses =
-  "w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:ring-2 focus:ring-emerald-500";
 
 const getLanguageValue = (value, language) => {
   if (typeof value === "string") return value;
@@ -88,26 +86,23 @@ export default function EditQuestionPage() {
         setTests(testsData || []);
 
         // 2. Get the question
-        const question = await apiRequest(
-          `/questions/${params.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const question = await apiRequest(`/questions/${params.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         console.log("QUESTION:", question);
 
         const options = question.options || [];
 
-        // Support both bilingual objects and older string values
+        // Support both bilingual objects and older string values.
         const optionA = options[0] || {};
         const optionB = options[1] || {};
         const optionC = options[2] || {};
         const optionD = options[3] || {};
 
-        // Numeric correctAnswer: 0 = A, 1 = B, 2 = C, 3 = D
+        // Numeric correctAnswer: 0 = A, 1 = B, 2 = C, 3 = D.
         // Also supports older records where correctAnswer was stored as text.
         let correctAnswerIndex = "";
 
@@ -175,7 +170,6 @@ export default function EditQuestionPage() {
         });
       } catch (err) {
         console.error("EDIT QUESTION ERROR:", err);
-
         setError(err.message || "Failed to load question");
       } finally {
         setLoading(false);
@@ -190,6 +184,13 @@ export default function EditQuestionPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  const handleRichTextChange = (name, value) => {
     setForm((current) => ({
       ...current,
       [name]: value,
@@ -239,13 +240,13 @@ export default function EditQuestionPage() {
         return;
       }
 
+      // Only English question and options are required.
       if (
-        !form.questionTextEn.trim() ||
-        !form.questionTextHi.trim() ||
-        options.some((option) => !option.en || !option.hi)
+        !form.questionTextEn.replace(/<[^>]*>/g, "").trim() ||
+        options.some((option) => !option.en)
       ) {
         setError(
-          "Please fill in both English and Hindi question and options."
+          "Please fill in the English question and all four English options."
         );
         return;
       }
@@ -253,6 +254,7 @@ export default function EditQuestionPage() {
       const payload = {
         test: form.test,
 
+        // Rich text HTML is saved in the existing string fields.
         questionText: {
           en: form.questionTextEn.trim(),
           hi: form.questionTextHi.trim(),
@@ -263,6 +265,7 @@ export default function EditQuestionPage() {
         // Option A = 0, B = 1, C = 2, D = 3
         correctAnswer: Number(form.correctAnswer),
 
+        // Explanation remains optional in both languages.
         explanation: {
           en: form.explanationEn.trim(),
           hi: form.explanationHi.trim(),
@@ -321,7 +324,7 @@ export default function EditQuestionPage() {
           </h1>
 
           <p className="mt-1 text-zinc-400">
-            Update this question in English and Hindi.
+            English is required. Hindi translation is optional.
           </p>
         </div>
       </div>
@@ -377,41 +380,35 @@ export default function EditQuestionPage() {
                 </h3>
 
                 <p className="text-sm text-zinc-400">
-                  Update the question in both languages.
+                  English is required. Hindi is optional.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="questionTextEn" className="text-zinc-300">
-                  Question (English)
+                <Label className="text-zinc-300">
+                  Question (English) *
                 </Label>
 
-                <textarea
-                  id="questionTextEn"
-                  name="questionTextEn"
+                <RichTextEditor
                   value={form.questionTextEn}
-                  onChange={handleChange}
-                  required
-                  rows={3}
+                  onChange={(value) =>
+                    handleRichTextChange("questionTextEn", value)
+                  }
                   placeholder="Enter question in English..."
-                  className={textareaClasses}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="questionTextHi" className="text-zinc-300">
-                  प्रश्न (हिंदी)
+                <Label className="text-zinc-300">
+                  प्रश्न (हिंदी) (Optional)
                 </Label>
 
-                <textarea
-                  id="questionTextHi"
-                  name="questionTextHi"
+                <RichTextEditor
                   value={form.questionTextHi}
-                  onChange={handleChange}
-                  required
-                  rows={3}
-                  placeholder="प्रश्न हिंदी में लिखें..."
-                  className={textareaClasses}
+                  onChange={(value) =>
+                    handleRichTextChange("questionTextHi", value)
+                  }
+                  placeholder="प्रश्न हिंदी में लिखें (वैकल्पिक)..."
                 />
               </div>
             </div>
@@ -424,7 +421,7 @@ export default function EditQuestionPage() {
                 </h3>
 
                 <p className="text-sm text-zinc-400">
-                  Update all four options in English and Hindi.
+                  All four English options are required. Hindi is optional.
                 </p>
               </div>
 
@@ -446,7 +443,7 @@ export default function EditQuestionPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor={option.en} className="text-zinc-300">
-                        English
+                        English *
                       </Label>
 
                       <Input
@@ -462,7 +459,7 @@ export default function EditQuestionPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor={option.hi} className="text-zinc-300">
-                        हिंदी
+                        हिंदी (Optional)
                       </Label>
 
                       <Input
@@ -470,8 +467,7 @@ export default function EditQuestionPage() {
                         name={option.hi}
                         value={form[option.hi]}
                         onChange={handleChange}
-                        placeholder={`विकल्प ${option.letter} हिंदी में लिखें`}
-                        required
+                        placeholder={`विकल्प ${option.letter} हिंदी में लिखें (वैकल्पिक)`}
                         className={inputClasses}
                       />
                     </div>
@@ -538,39 +534,35 @@ export default function EditQuestionPage() {
                 </h3>
 
                 <p className="text-sm text-zinc-400">
-                  Update the explanation in both languages.
+                  Explanation is optional. You can enter English, Hindi, or both.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="explanationEn" className="text-zinc-300">
+                <Label className="text-zinc-300">
                   Explanation (English)
                 </Label>
 
-                <textarea
-                  id="explanationEn"
-                  name="explanationEn"
+                <RichTextEditor
                   value={form.explanationEn}
-                  onChange={handleChange}
-                  rows={3}
+                  onChange={(value) =>
+                    handleRichTextChange("explanationEn", value)
+                  }
                   placeholder="Explain the correct answer in English..."
-                  className={textareaClasses}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="explanationHi" className="text-zinc-300">
-                  व्याख्या (हिंदी)
+                <Label className="text-zinc-300">
+                  व्याख्या (हिंदी) (Optional)
                 </Label>
 
-                <textarea
-                  id="explanationHi"
-                  name="explanationHi"
+                <RichTextEditor
                   value={form.explanationHi}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="सही उत्तर की व्याख्या हिंदी में लिखें..."
-                  className={textareaClasses}
+                  onChange={(value) =>
+                    handleRichTextChange("explanationHi", value)
+                  }
+                  placeholder="सही उत्तर की व्याख्या हिंदी में लिखें (वैकल्पिक)..."
                 />
               </div>
             </div>
