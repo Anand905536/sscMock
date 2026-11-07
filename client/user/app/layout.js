@@ -9,7 +9,6 @@ const themeScript = `
 (function () {
   try {
     const theme = localStorage.getItem("theme") || "dark";
-
     document.documentElement.setAttribute("data-theme", theme);
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.style.colorScheme = theme;
@@ -26,7 +25,6 @@ export default function RootLayout({ children }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-
       <body>
         <ThemeProvider>
           <GoogleOneTap />

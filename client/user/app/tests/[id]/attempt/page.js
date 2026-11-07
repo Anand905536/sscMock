@@ -18,6 +18,62 @@ import {
 import { useTheme } from "@/context/ThemeContext";
 import SafeRichText from "@/components/SafeRichText";
 
+// Separates the shared Cloze passage from the instruction for the current blank.
+function splitClozeQuestion(html) {
+  if (typeof html !== "string" || !html.trim()) {
+    return { passage: "", prompt: "" };
+  }
+
+  const promptPattern =
+    /(fill\s+in\s+the\s+blank|identify\s+the\s+correct|choose\s+the\s+correct|select\s+the\s+correct|which\s+(?:word|preposition|option|phrase)|correct\s+(?:word|preposition|option))/i;
+  const paragraphs = [...html.matchAll(/<p\b[^>]*>[\s\S]*?<\/p>/gi)];
+  const lastParagraph = paragraphs[paragraphs.length - 1];
+
+  if (lastParagraph && promptPattern.test(lastParagraph[0])) {
+    const paragraphHtml = lastParagraph[0];
+    const keywordMatch = promptPattern.exec(paragraphHtml);
+    const breakIndex = paragraphHtml.lastIndexOf("<br", keywordMatch.index);
+
+    // Passage and instruction are sometimes stored in one paragraph with a <br>.
+    if (breakIndex >= 0) {
+      const passagePart = paragraphHtml.slice(0, breakIndex).trim();
+      const promptPart = paragraphHtml
+        .slice(breakIndex)
+        .replace(/^<br\s*\/?\s*>/i, "")
+        .replace(/<\/p>\s*$/i, "")
+        .trim();
+      return {
+        passage: `${html.slice(0, lastParagraph.index)}${passagePart}`.trim(),
+        prompt: promptPart,
+      };
+    }
+
+    if (lastParagraph.index === 0) {
+      return { passage: html, prompt: "" };
+    }
+
+    return {
+      passage: html.slice(0, lastParagraph.index).trim(),
+      prompt: paragraphHtml.trim(),
+    };
+  }
+
+  // Some question records append the instruction after a line break
+  // instead of wrapping it in its own paragraph.
+  const keywordMatch = promptPattern.exec(html);
+  if (keywordMatch) {
+    const breakIndex = html.lastIndexOf("<br", keywordMatch.index);
+    if (breakIndex >= 0) {
+      return {
+        passage: html.slice(0, breakIndex).trim(),
+        prompt: html.slice(breakIndex).replace(/^<br\s*\/?\s*>/i, "").trim(),
+      };
+    }
+  }
+
+  return { passage: html, prompt: "" };
+}
+
 export default function AttemptPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -32,6 +88,7 @@ export default function AttemptPage() {
   const { darkMode, isThemeReady } = useTheme();
 
   const [questions, setQuestions] = useState([]);
+  const [testMeta, setTestMeta] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
@@ -111,6 +168,8 @@ export default function AttemptPage() {
             Authorization: `Bearer ${token}`,
           },
         });
+
+        setTestMeta(testData.test || testData);
 
         const durationMinutes =
           testData.test?.durationMinutes ||
@@ -279,6 +338,11 @@ export default function AttemptPage() {
   }
 
   const question = questions[currentIndex];
+  const isClozeTest = [
+    testMeta?.topic,
+    testMeta?.description,
+    testMeta?.title,
+  ].some((value) => String(value || "").toLowerCase().includes("cloze"));
   const selectedAnswer = answers[question._id];
 
   const questionText =
@@ -287,6 +351,9 @@ export default function AttemptPage() {
       : question.questionText?.[language] ||
         question.questionText?.en ||
         "";
+  const clozeContent = isClozeTest
+    ? splitClozeQuestion(questionText)
+    : { passage: questionText, prompt: "" };
 
   const getOptionText = (option) => {
     if (typeof option === "string") return option;
@@ -492,6 +559,25 @@ export default function AttemptPage() {
             </div>
 
             <style jsx global>{`
+              .chatgpt-text,
+              .chatgpt-text * {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+                font-size: 16px !important;
+                line-height: 1.5 !important;
+              }
+              .cloze-passage {
+                width: 100%;
+                text-align: justify;
+                text-justify: inter-word;
+                text-align-last: left;
+                overflow-wrap: anywhere;
+              }
+              .cloze-passage p {
+                margin: 0 0 0.45rem;
+              }
+              .cloze-passage p:last-child {
+                margin-bottom: 0;
+              }
               .hide-scrollbar::-webkit-scrollbar {
                 display: none;
               }
@@ -503,18 +589,49 @@ export default function AttemptPage() {
 
             {/* Question and Options */}
             <div
-              className={`rounded-3xl p-6 sm:p-8 shadow-xl shadow-zinc-950/40 transition-colors duration-300 max-h-[calc(100vh-210px)] overflow-y-auto hide-scrollbar ${
+              className={`rounded-3xl shadow-xl shadow-zinc-950/40 transition-colors duration-300 ${
+                isClozeTest
+                  ? "grid grid-cols-1 grid-rows-2 lg:grid-cols-2 lg:grid-rows-1 gap-4 h-[calc(100vh-220px)] min-h-[360px] overflow-hidden p-4 sm:p-5"
+                  : "max-h-[calc(100vh-210px)] overflow-y-auto hide-scrollbar p-6 sm:p-8"
+              } ${
                 darkMode
                   ? "bg-zinc-900 text-zinc-100"
                   : "border border-gray-200 bg-white text-gray-900"
               }`}
             >
-              <SafeRichText
-                html={questionText}
-                className="text-base sm:text-lg font-bold"
-              />
+              <div
+                className={
+                  isClozeTest
+                    ? `min-h-0 min-w-0 overflow-y-auto hide-scrollbar overscroll-contain rounded-2xl p-3 sm:p-4 ${
+                        darkMode ? "bg-zinc-950/35" : "bg-gray-50"
+                      }`
+                    : ""
+                }
+              >
+                <SafeRichText
+                  html={isClozeTest ? clozeContent.passage : questionText}
+                  className={`chatgpt-text ${isClozeTest ? "cloze-passage" : ""}`}
+                />
+              </div>
 
-              <div className="mt-6 space-y-3">
+              <div
+                className={`${isClozeTest ? `min-h-0 min-w-0 overflow-y-auto hide-scrollbar overscroll-contain rounded-2xl p-3 sm:p-4 ${darkMode ? "bg-zinc-950/35" : "bg-gray-50"}` : "mt-6"} space-y-3`}
+              >
+                {isClozeTest && (
+                  <div className={`mb-4 rounded-xl p-3 sm:p-4 ${darkMode ? "bg-zinc-900/80 text-zinc-100" : "bg-white text-gray-900 border border-gray-200"}`}>
+                    <p className={`mb-2 text-xs font-bold uppercase tracking-wide ${darkMode ? "text-emerald-400" : "text-emerald-700"}`}>
+                      Question {currentIndex + 1}
+                    </p>
+                    {clozeContent.prompt ? (
+                      <SafeRichText
+                        html={clozeContent.prompt}
+                        className="chatgpt-text"
+                      />
+                    ) : (
+                      <p className="chatgpt-text">Choose the correct option for this blank.</p>
+                    )}
+                  </div>
+                )}
                 {question.options.map((option, index) => {
                   const optionText = getOptionText(option);
                   const isSelected = selectedAnswer === index;
@@ -524,7 +641,7 @@ export default function AttemptPage() {
                       key={index}
                       type="button"
                       onClick={() => handleAnswer(index)}
-                      className={`cursor-pointer w-full rounded-2xl px-4 py-3.5 text-left text-sm font-medium transition-all flex items-center gap-3.5 ${
+                      className={`cursor-pointer w-full rounded-2xl px-4 py-3.5 text-left text-base font-medium transition-all flex items-center gap-3.5 ${
                         isSelected
                           ? darkMode
                             ? "bg-emerald-500/20 text-white font-semibold shadow-xs"
@@ -546,7 +663,7 @@ export default function AttemptPage() {
                         {String.fromCharCode(65 + index)}
                       </span>
 
-                      <span className="flex-1">
+                      <span className="chatgpt-text flex-1">
                         {optionText}
                       </span>
                     </button>

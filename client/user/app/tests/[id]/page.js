@@ -41,7 +41,6 @@ export default function TestInstructionsPage() {
             Authorization: `Bearer ${token}`,
           },
         });
-
         setTest(data.test || data);
       } catch (error) {
         console.error(error);
